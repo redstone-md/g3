@@ -1,6 +1,6 @@
-# Contributing to Ribbon
+# Contributing to G3
 
-Thanks for your interest in improving Ribbon! This document covers the essentials.
+Thanks for your interest in improving G3! This document covers the essentials.
 
 ## Getting set up
 
