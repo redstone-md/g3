@@ -18,7 +18,8 @@
     "password_weak": "Weak",
     "password_fair": "Fair",
     "password_good": "Good",
-    "password_strong": "Strong"
+    "password_strong": "Strong",
+    "done": "Done"
   },
   "nav": {
     "styleGuide": "Style Guide",
@@ -30,7 +31,9 @@
     "integrations": "Integrations",
     "monitoring": "Monitoring",
     "accounts": "Accounts",
-    "storage": "Storage"
+    "storage": "Storage",
+    "buckets": "Buckets",
+    "keys": "Access Keys"
   },
   "audit": {
     "title": "Audit Log",
@@ -72,7 +75,8 @@
       "users": "Users",
       "roles": "Roles",
       "audit": "Audit Log",
-      "accounts": "Drive Accounts"
+      "accounts": "Drive Accounts",
+      "storage": "S3 Storage"
     },
     "styleguide": {
       "view": "View Style Guide",
@@ -109,6 +113,12 @@
       "create_desc": "Connect new Google Drive accounts to the pool.",
       "delete": "Remove accounts",
       "delete_desc": "Unlink Google Drive accounts."
+    },
+    "storage": {
+      "read": "View storage",
+      "read_desc": "List buckets, access keys, and balancing.",
+      "write": "Manage storage",
+      "write_desc": "Create buckets and access keys, set balancing."
     }
   },
   "header": {
@@ -305,5 +315,46 @@
     "empty": "No Google accounts linked yet.",
     "linked": "Google account linked.",
     "linkError": "Linking failed ({reason})."
+  },
+  "buckets": {
+    "title": "Buckets",
+    "description": "S3 buckets stored across your Google Drive pool.",
+    "new": "New bucket",
+    "create": "Create",
+    "name": "Name",
+    "nameHint": "3–63 chars: lowercase letters, digits, dots, hyphens.",
+    "objects": "Objects",
+    "created": "Created",
+    "empty": "No buckets yet.",
+    "delete": "Delete",
+    "deleteTitle": "Delete bucket",
+    "deleted": "Bucket deleted.",
+    "balancing": "Balancing strategy",
+    "balancingDescription": "How new objects are spread across Drive accounts.",
+    "balancingSaved": "Balancing strategy saved.",
+    "strategy_round_robin": "Round robin",
+    "strategy_least_used": "Least used (most free space)",
+    "strategy_fill_first": "Fill first",
+    "strategy_hash": "Hash by key"
+  },
+  "keys": {
+    "title": "Access Keys",
+    "description": "S3 credentials for connecting tools to G3.",
+    "new": "Create key",
+    "accessKeyId": "Access key ID",
+    "secretAccessKey": "Secret access key",
+    "label": "Label",
+    "lastUsed": "Last used",
+    "never": "Never",
+    "revoke": "Revoke",
+    "revoked": "Access key revoked.",
+    "revokeTitle": "Revoke access key",
+    "revokeWarning": "tools using it will stop working.",
+    "empty": "No access keys yet.",
+    "createdTitle": "Access key created",
+    "createdWarning": "Copy the secret now — it will not be shown again.",
+    "endpoint": "S3 endpoint",
+    "endpointDescription": "Point your S3 client at this URL.",
+    "pathStyle": "Use path-style addressing."
   }
 }

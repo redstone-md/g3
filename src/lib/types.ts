@@ -29,6 +29,31 @@ export interface AuditLogDTO {
   createdAt: string;
 }
 
+/** An S3 bucket. */
+export interface BucketDTO {
+  id: string;
+  name: string;
+  createdAt: string;
+  objectCount: number;
+}
+
+/** An S3 access key (the secret is shown only once, on creation). */
+export interface AccessKeyDTO {
+  id: string;
+  accessKeyId: string;
+  label: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+/** Returned once when a key is created. */
+export interface CreatedKeyDTO {
+  id: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  label: string;
+}
+
 /** A linked Google Drive storage account. */
 export interface AccountDTO {
   id: string;

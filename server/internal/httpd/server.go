@@ -60,6 +60,16 @@ func New(cfg config.Config, st *store.Store, cipher *crypto.Cipher, driveMgr *dr
 	mux.HandleFunc("PATCH /api/accounts/{id}", a.updateAccount)
 	mux.HandleFunc("DELETE /api/accounts/{id}", a.deleteDriveAccount)
 
+	// S3 storage admin (buckets, access keys, balancing).
+	mux.HandleFunc("GET /api/buckets", a.listBuckets)
+	mux.HandleFunc("POST /api/buckets", a.createBucket)
+	mux.HandleFunc("DELETE /api/buckets/{id}", a.deleteBucket)
+	mux.HandleFunc("GET /api/keys", a.listKeys)
+	mux.HandleFunc("POST /api/keys", a.createKey)
+	mux.HandleFunc("DELETE /api/keys/{id}", a.deleteKey)
+	mux.HandleFunc("GET /api/settings/balancing", a.getBalancing)
+	mux.HandleFunc("PUT /api/settings/balancing", a.setBalancing)
+
 	// Account (self-service).
 	mux.HandleFunc("GET /api/account/sessions", a.listSessions)
 	mux.HandleFunc("DELETE /api/account/sessions/{id}", a.revokeSession)

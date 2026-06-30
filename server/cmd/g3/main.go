@@ -17,6 +17,7 @@ import (
 	"g3/internal/crypto"
 	"g3/internal/drive"
 	"g3/internal/httpd"
+	"g3/internal/s3"
 	"g3/internal/store"
 )
 
@@ -47,10 +48,23 @@ func main() {
 		log.Fatalf("[g3] server: %v", err)
 	}
 
+	// S3-compatible API on its own listener (separate from the panel/SPA).
+	s3srv := &http.Server{
+		Addr:              cfg.S3Addr,
+		Handler:           s3.New(st, driveMgr, cipher),
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+
 	go func() {
-		log.Printf("[g3] listening on %s", cfg.Addr)
+		log.Printf("[g3] panel listening on %s", cfg.Addr)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("[g3] listen: %v", err)
+		}
+	}()
+	go func() {
+		log.Printf("[g3] S3 API listening on %s", cfg.S3Addr)
+		if err := s3srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("[g3] s3 listen: %v", err)
 		}
 	}()
 
@@ -63,4 +77,5 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_ = srv.Shutdown(ctx)
+	_ = s3srv.Shutdown(ctx)
 }

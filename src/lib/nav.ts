@@ -1,6 +1,8 @@
 import {
   Activity01Icon,
   CloudIcon,
+  DatabaseIcon,
+  Key01Icon,
   PaintBrushIcon,
   ShieldUserIcon,
   UserMultipleIcon,
@@ -9,7 +11,14 @@ import {
 /** Sidebar navigation, gated by permission. Client-safe (no server-only). */
 export interface NavItem {
   /** Key under the `nav` message namespace. */
-  titleKey: "styleGuide" | "roles" | "users" | "accounts" | "audit";
+  titleKey:
+    | "styleGuide"
+    | "roles"
+    | "users"
+    | "accounts"
+    | "buckets"
+    | "keys"
+    | "audit";
   href: string;
   permission: string;
   icon: typeof PaintBrushIcon;
@@ -58,6 +67,18 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/dashboard/accounts",
         permission: "accounts.read",
         icon: CloudIcon,
+      },
+      {
+        titleKey: "buckets",
+        href: "/dashboard/buckets",
+        permission: "storage.read",
+        icon: DatabaseIcon,
+      },
+      {
+        titleKey: "keys",
+        href: "/dashboard/keys",
+        permission: "storage.read",
+        icon: Key01Icon,
       },
     ],
   },

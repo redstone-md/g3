@@ -10,7 +10,8 @@ import (
 
 // Config holds all runtime settings for the G3 server.
 type Config struct {
-	Addr     string // HTTP listen address, e.g. ":8787"
+	Addr     string // panel + SPA listen address, e.g. ":8787"
+	S3Addr   string // S3-compatible API listen address, e.g. ":9000"
 	DataDir  string // directory for the SQLite metadata DB
 	DevMode  bool   // relaxes cookie Secure flag for plain-HTTP local use
 
@@ -31,6 +32,7 @@ func Load() Config {
 
 	return Config{
 		Addr:               getenv("G3_ADDR", ":8787"),
+		S3Addr:             getenv("G3_S3_ADDR", ":9000"),
 		DataDir:            getenv("G3_DATA_DIR", "./g3-data"),
 		DevMode:            getenv("G3_DEV", "true") != "false",
 		AdminEmail:         getenv("G3_ADMIN_EMAIL", "admin@g3.local"),

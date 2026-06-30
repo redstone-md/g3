@@ -93,6 +93,66 @@ CREATE TABLE IF NOT EXISTS drive_accounts (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+-- S3 buckets (logical namespaces; bytes live on Drive).
+CREATE TABLE IF NOT EXISTS buckets (
+  id TEXT PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+-- S3 objects. A single-part object maps to one Drive file on one account;
+-- a multipart object keeps a JSON manifest of its parts (parts column).
+CREATE TABLE IF NOT EXISTS objects (
+  id TEXT PRIMARY KEY,
+  bucket_id TEXT NOT NULL,
+  object_key TEXT NOT NULL,
+  size INTEGER NOT NULL DEFAULT 0,
+  etag TEXT NOT NULL,
+  content_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+  account_id TEXT,
+  drive_file_id TEXT,
+  parts TEXT,
+  is_multipart INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE (bucket_id, object_key)
+);
+CREATE INDEX IF NOT EXISTS idx_objects_bucket_key ON objects(bucket_id, object_key);
+
+-- In-progress multipart uploads and their parts.
+CREATE TABLE IF NOT EXISTS multipart_uploads (
+  upload_id TEXT PRIMARY KEY,
+  bucket_id TEXT NOT NULL,
+  object_key TEXT NOT NULL,
+  content_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS multipart_parts (
+  upload_id TEXT NOT NULL,
+  part_number INTEGER NOT NULL,
+  account_id TEXT NOT NULL,
+  drive_file_id TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  etag TEXT NOT NULL,
+  PRIMARY KEY (upload_id, part_number)
+);
+
+-- S3 access keys for SigV4 authentication.
+CREATE TABLE IF NOT EXISTS s3_access_keys (
+  id TEXT PRIMARY KEY,
+  access_key_id TEXT UNIQUE NOT NULL,
+  secret_hash TEXT NOT NULL,
+  label TEXT,
+  created_at TEXT NOT NULL,
+  last_used_at TEXT
+);
+
+-- Key/value settings (e.g. balancing strategy).
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
 `
 
 // Open creates (if needed) and opens the metadata DB, applies the schema, and

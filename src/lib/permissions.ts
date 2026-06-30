@@ -106,6 +106,22 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     ],
   },
   {
+    key: "storage",
+    label: "S3 Storage",
+    permissions: [
+      {
+        key: "storage.read",
+        label: "View storage",
+        description: "List buckets, access keys, and balancing.",
+      },
+      {
+        key: "storage.write",
+        label: "Manage storage",
+        description: "Create buckets and access keys, set balancing.",
+      },
+    ],
+  },
+  {
     key: "audit",
     label: "Audit Log",
     permissions: [

@@ -13,6 +13,8 @@ const KEYS: Record<string, string> = {
   roles: "nav.roles",
   users: "nav.users",
   accounts: "nav.accounts",
+  buckets: "nav.buckets",
+  keys: "nav.keys",
   audit: "nav.audit",
   settings: "settings.title",
 };
