@@ -110,6 +110,12 @@ func (s *Server) listBuckets(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) bucketOp(w http.ResponseWriter, r *http.Request, name string) {
+	// Sub-resources (?acl, ?policy, ?location, ?versioning, …) come first so a
+	// client's Properties/Permissions tabs don't receive an object listing.
+	if sub, ok := detectBucketSub(r.URL.Query()); ok {
+		s.handleBucketSub(w, r, name, sub)
+		return
+	}
 	switch r.Method {
 	case http.MethodPut:
 		if _, err := s.store.BucketByName(name); err == nil {
@@ -227,6 +233,11 @@ func (s *Server) objectOp(w http.ResponseWriter, r *http.Request, name, key stri
 		return
 	}
 	q := r.URL.Query()
+
+	if sub, ok := detectObjectSub(q); ok {
+		s.handleObjectSub(w, r, b, key, sub)
+		return
+	}
 
 	if _, ok := q["uploads"]; ok && r.Method == http.MethodPost {
 		s.initiateMultipart(w, r, b, key)
