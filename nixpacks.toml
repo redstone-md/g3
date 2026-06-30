@@ -1,0 +1,27 @@
+# Nixpacks build for the G3 single binary.
+#
+# G3 is a two-stage build: the Next.js panel is exported to static HTML, then
+# embedded into the Go server, producing one binary. Nixpacks alone only sees
+# package.json, so we drive both toolchains explicitly here.
+
+providers = ["node"]
+
+[phases.setup]
+nixPkgs = ["nodejs_22", "go"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+dependsOn = ["install"]
+cmds = [
+  # 1. Static-export the frontend to out/.
+  "npm run build",
+  # 2. Embed it into the Go binary's asset directory.
+  "rm -rf server/internal/httpd/dist && mkdir -p server/internal/httpd/dist && cp -r out/. server/internal/httpd/dist/",
+  # 3. Build the single binary (pure-Go SQLite, so CGO is off).
+  "cd server && CGO_ENABLED=0 GOTOOLCHAIN=auto go build -ldflags '-s -w' -o ../g3 ./cmd/g3",
+]
+
+[start]
+cmd = "./g3"
