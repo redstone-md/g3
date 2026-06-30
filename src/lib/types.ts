@@ -29,21 +29,6 @@ export interface AuditLogDTO {
   createdAt: string;
 }
 
-export interface OAuthClientDTO {
-  id: string;
-  clientId: string;
-  name: string;
-  redirectUris: string[];
-  scopes: string[];
-  isPublic: boolean;
-  createdAt: string;
-}
-
-/** Returned only on creation — includes the one-time plaintext secret. */
-export interface OAuthClientCreatedDTO extends OAuthClientDTO {
-  clientSecret: string | null;
-}
-
 export interface UserDTO {
   id: string;
   email: string;

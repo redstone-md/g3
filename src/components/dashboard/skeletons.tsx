@@ -49,7 +49,7 @@ function HeaderSkeleton() {
   );
 }
 
-/** Loading placeholder for the table pages (roles/users/oauth). Mirrors the
+/** Loading placeholder for the table pages (roles/users). Mirrors the
  *  search bar, bordered table card, fixed-height rows, and pagination footer. */
 export function TablePageSkeleton({
   rows = PAGE_SIZE,

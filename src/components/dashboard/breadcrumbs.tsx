@@ -12,7 +12,6 @@ const KEYS: Record<string, string> = {
   dashboard: "nav.styleGuide",
   roles: "nav.roles",
   users: "nav.users",
-  oauth: "nav.oauth",
   audit: "nav.audit",
   settings: "settings.title",
 };

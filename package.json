@@ -1,40 +1,23 @@
 {
-  "name": "ribbon",
+  "name": "g3-web",
   "version": "0.1.0",
   "private": true,
-  "description": "Production-grade Next.js dashboard boilerplate: custom auth, RBAC with role inheritance, OAuth2 provider + SSO client, audit log, i18n, theming, and a polished shadcn/GSAP UI.",
+  "description": "G3 panel — static-exported Next.js admin UI for the G3 S3-over-Google-Drive server. Served by the Go backend as a single binary.",
   "license": "Apache-2.0",
-  "author": "redstone-md",
-  "homepage": "https://github.com/redstone-md/ribbon#readme",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/redstone-md/ribbon.git"
-  },
-  "bugs": {
-    "url": "https://github.com/redstone-md/ribbon/issues"
-  },
   "keywords": [
     "nextjs",
-    "boilerplate",
+    "s3",
+    "google-drive",
     "rbac",
-    "oauth2",
-    "authentication",
     "dashboard",
     "shadcn",
-    "prisma",
-    "mongodb",
     "i18n"
   ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:setup": "prisma db push && tsx prisma/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -42,7 +25,6 @@
     "@bprogress/next": "^3.2.12",
     "@hugeicons/core-free-icons": "^4.2.0",
     "@hugeicons/react": "^1.1.6",
-    "@prisma/client": "^6.19.3",
     "@tanstack/react-query": "^5.100.14",
     "@tanstack/react-query-devtools": "^5.100.14",
     "bcryptjs": "^3.0.3",
@@ -70,7 +52,6 @@
     "@types/node": "^20.19.41",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "prisma": "^6.19.3",
     "shadcn": "^4.10.0",
     "tailwindcss": "^4",
     "tsx": "^4.22.4",

@@ -24,7 +24,6 @@
     "styleGuide": "Style Guide",
     "roles": "Roles",
     "users": "Users",
-    "oauth": "OAuth Clients",
     "audit": "Audit Log",
     "workspace": "Workspace",
     "access": "Access",
@@ -59,13 +58,6 @@
         "update": "Updated role",
         "delete": "Deleted role"
       },
-      "oauth": {
-        "client": {
-          "create": "Created OAuth client",
-          "update": "Updated OAuth client",
-          "delete": "Deleted OAuth client"
-        }
-      },
       "session": {
         "revoke": "Revoked a session",
         "revoke_others": "Signed out other devices"
@@ -77,7 +69,6 @@
       "styleguide": "Style Guide",
       "users": "Users",
       "roles": "Roles",
-      "oauth": "OAuth Clients",
       "audit": "Audit Log"
     },
     "styleguide": {
@@ -104,16 +95,6 @@
       "delete": "Delete roles",
       "delete_desc": "Remove non-system roles."
     },
-    "oauth": {
-      "read": "View OAuth clients",
-      "read_desc": "List registered OAuth applications.",
-      "create": "Create OAuth clients",
-      "create_desc": "Register new OAuth applications.",
-      "update": "Edit OAuth clients",
-      "update_desc": "Change redirect URIs and scopes.",
-      "delete": "Delete OAuth clients",
-      "delete_desc": "Remove OAuth applications."
-    },
     "audit": {
       "read": "View audit log",
       "read_desc": "Read the system activity log."
@@ -138,8 +119,6 @@
     "signIn": "Sign in",
     "signingIn": "Signing in…",
     "or": "or",
-    "sso": "Sign in with SSO",
-    "ssoError": "SSO sign-in failed. Please try again.",
     "changeTitle": "Change password",
     "changeSubForced": "Set a new password to finish securing your account.",
     "changeSub": "Update the password on your account.",
@@ -276,50 +255,6 @@
     "avatarAria": "Avatar {key}",
     "sessionRevoked": "Session revoked.",
     "signedOutOthers": "Signed out of other devices."
-  },
-  "oauth": {
-    "title": "OAuth Clients",
-    "description": "Apps that can sign in users via Ribbon.",
-    "new": "New client",
-    "name": "Name",
-    "clientId": "Client ID",
-    "type": "Type",
-    "public": "Public",
-    "confidential": "Confidential",
-    "redirectUris": "Redirect URIs",
-    "searchPlaceholder": "Search clients…",
-    "empty": "No OAuth clients yet.",
-    "deleteTitle": "Delete OAuth client",
-    "editTitle": "Edit OAuth client",
-    "createTitle": "New OAuth client",
-    "editSub": "Update redirect URIs and scopes.",
-    "createSub": "Register an app to sign in via Ribbon.",
-    "redirectUrisHint": "One per line. Exact match required.",
-    "scopes": "Scopes",
-    "publicLabel": "Public client (PKCE only)",
-    "publicHint": "No client secret. Use for SPAs / native apps.",
-    "createBtn": "Create client",
-    "credsTitle": "Client credentials",
-    "credsDesc": "Copy these now — the secret is shown only once.",
-    "clientSecret": "Client secret",
-    "publicNoSecret": "Public client — no secret (PKCE only).",
-    "copy": "Copy",
-    "copied": "Copied.",
-    "done": "Done",
-    "consentTitle": "Authorize {app}",
-    "consentSub": "{app} wants to access your Ribbon account ({email}).",
-    "consentAllow": "This will allow it to:",
-    "scopeOpenid": "Verify your identity",
-    "scopeProfile": "Your name and avatar",
-    "scopeEmail": "Your email address",
-    "deny": "Deny",
-    "authorize": "Authorize",
-    "editAria": "Edit client",
-    "deleteAria": "Delete client",
-    "namePlaceholder": "My App",
-    "created": "OAuth client created.",
-    "updated": "OAuth client updated.",
-    "deleted": "OAuth client deleted."
   },
   "command": {
     "placeholder": "Type a command or search…",

@@ -43,16 +43,3 @@ export const profileSchema = z.object({
   avatar: z.string().max(40).nullable().optional(),
 });
 export type ProfileInput = z.infer<typeof profileSchema>;
-
-export const oauthClientSchema = z.object({
-  name: z.string().min(2, { error: "At least 2 characters." }).max(60).trim(),
-  redirectUris: z
-    .array(z.url({ error: "Must be a valid URL." }))
-    .min(1, { error: "At least one redirect URI." }),
-  scopes: z
-    .array(z.enum(["openid", "profile", "email"]))
-    .min(1)
-    .default(["openid", "profile", "email"]),
-  isPublic: z.boolean().default(false),
-});
-export type OAuthClientInput = z.infer<typeof oauthClientSchema>;

@@ -24,7 +24,6 @@
     "styleGuide": "Гайд по стилю",
     "roles": "Роли",
     "users": "Пользователи",
-    "oauth": "OAuth-клиенты",
     "audit": "Журнал аудита",
     "workspace": "Рабочая область",
     "access": "Доступ",
@@ -59,13 +58,6 @@
         "update": "Изменена роль",
         "delete": "Удалена роль"
       },
-      "oauth": {
-        "client": {
-          "create": "Создан OAuth-клиент",
-          "update": "Изменён OAuth-клиент",
-          "delete": "Удалён OAuth-клиент"
-        }
-      },
       "session": {
         "revoke": "Отозвана сессия",
         "revoke_others": "Выход на других устройствах"
@@ -77,7 +69,6 @@
       "styleguide": "Гайд по стилю",
       "users": "Пользователи",
       "roles": "Роли",
-      "oauth": "OAuth-клиенты",
       "audit": "Журнал аудита"
     },
     "styleguide": {
@@ -104,16 +95,6 @@
       "delete": "Удаление ролей",
       "delete_desc": "Удаление несистемных ролей."
     },
-    "oauth": {
-      "read": "Просмотр OAuth-клиентов",
-      "read_desc": "Список зарегистрированных приложений.",
-      "create": "Создание OAuth-клиентов",
-      "create_desc": "Регистрация новых приложений.",
-      "update": "Редактирование OAuth-клиентов",
-      "update_desc": "Изменение redirect URIs и scopes.",
-      "delete": "Удаление OAuth-клиентов",
-      "delete_desc": "Удаление приложений."
-    },
     "audit": {
       "read": "Просмотр журнала аудита",
       "read_desc": "Чтение журнала активности системы."
@@ -138,8 +119,6 @@
     "signIn": "Войти",
     "signingIn": "Вход…",
     "or": "или",
-    "sso": "Войти через SSO",
-    "ssoError": "Не удалось войти через SSO. Попробуйте снова.",
     "changeTitle": "Смена пароля",
     "changeSubForced": "Задайте новый пароль, чтобы защитить аккаунт.",
     "changeSub": "Обновите пароль вашего аккаунта.",
@@ -276,50 +255,6 @@
     "avatarAria": "Аватар {key}",
     "sessionRevoked": "Сессия отозвана.",
     "signedOutOthers": "Вы вышли на других устройствах."
-  },
-  "oauth": {
-    "title": "OAuth-клиенты",
-    "description": "Приложения, которые могут авторизовать пользователей через Ribbon.",
-    "new": "Новый клиент",
-    "name": "Название",
-    "clientId": "Client ID",
-    "type": "Тип",
-    "public": "Публичный",
-    "confidential": "Конфиденциальный",
-    "redirectUris": "Redirect URIs",
-    "searchPlaceholder": "Поиск клиентов…",
-    "empty": "OAuth-клиентов пока нет.",
-    "deleteTitle": "Удалить OAuth-клиент",
-    "editTitle": "Редактировать OAuth-клиент",
-    "createTitle": "Новый OAuth-клиент",
-    "editSub": "Измените redirect URIs и scopes.",
-    "createSub": "Зарегистрируйте приложение для входа через Ribbon.",
-    "redirectUrisHint": "По одному на строку. Требуется точное совпадение.",
-    "scopes": "Scopes",
-    "publicLabel": "Публичный клиент (только PKCE)",
-    "publicHint": "Без client secret. Для SPA / нативных приложений.",
-    "createBtn": "Создать клиент",
-    "credsTitle": "Учётные данные клиента",
-    "credsDesc": "Скопируйте сейчас — секрет показывается только один раз.",
-    "clientSecret": "Client secret",
-    "publicNoSecret": "Публичный клиент — без секрета (только PKCE).",
-    "copy": "Копировать",
-    "copied": "Скопировано.",
-    "done": "Готово",
-    "consentTitle": "Авторизовать {app}",
-    "consentSub": "{app} запрашивает доступ к вашему аккаунту Ribbon ({email}).",
-    "consentAllow": "Это разрешит приложению:",
-    "scopeOpenid": "Подтвердить вашу личность",
-    "scopeProfile": "Ваше имя и аватар",
-    "scopeEmail": "Ваш email",
-    "deny": "Отклонить",
-    "authorize": "Авторизовать",
-    "editAria": "Изменить клиент",
-    "deleteAria": "Удалить клиент",
-    "namePlaceholder": "Моё приложение",
-    "created": "OAuth-клиент создан.",
-    "updated": "OAuth-клиент обновлён.",
-    "deleted": "OAuth-клиент удалён."
   },
   "command": {
     "placeholder": "Введите команду или запрос…",

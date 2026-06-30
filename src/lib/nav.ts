@@ -1,6 +1,5 @@
 import {
   Activity01Icon,
-  ConnectIcon,
   PaintBrushIcon,
   ShieldUserIcon,
   UserMultipleIcon,
@@ -9,7 +8,7 @@ import {
 /** Sidebar navigation, gated by permission. Client-safe (no server-only). */
 export interface NavItem {
   /** Key under the `nav` message namespace. */
-  titleKey: "styleGuide" | "roles" | "users" | "oauth" | "audit";
+  titleKey: "styleGuide" | "roles" | "users" | "audit";
   href: string;
   permission: string;
   icon: typeof PaintBrushIcon;
@@ -47,17 +46,6 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/dashboard/roles",
         permission: "roles.read",
         icon: ShieldUserIcon,
-      },
-    ],
-  },
-  {
-    labelKey: "integrations",
-    items: [
-      {
-        titleKey: "oauth",
-        href: "/dashboard/oauth",
-        permission: "oauth.read",
-        icon: ConnectIcon,
       },
     ],
   },

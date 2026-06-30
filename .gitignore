@@ -41,4 +41,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
+# go / g3 backend
+/g3
+/g3.exe
+/server/internal/httpd/dist/
+/g3-data/
+*.db
+*.db-shm
+*.db-wal

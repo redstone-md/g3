@@ -85,32 +85,6 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     ],
   },
   {
-    key: "oauth",
-    label: "OAuth Clients",
-    permissions: [
-      {
-        key: "oauth.read",
-        label: "View OAuth clients",
-        description: "List registered OAuth applications.",
-      },
-      {
-        key: "oauth.create",
-        label: "Create OAuth clients",
-        description: "Register new OAuth applications.",
-      },
-      {
-        key: "oauth.update",
-        label: "Edit OAuth clients",
-        description: "Change redirect URIs and scopes.",
-      },
-      {
-        key: "oauth.delete",
-        label: "Delete OAuth clients",
-        description: "Remove OAuth applications.",
-      },
-    ],
-  },
-  {
     key: "audit",
     label: "Audit Log",
     permissions: [
