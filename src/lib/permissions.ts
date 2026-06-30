@@ -22,13 +22,13 @@ export interface PermissionGroup {
 
 export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
   {
-    key: "styleguide",
-    label: "Style Guide",
+    key: "dashboard",
+    label: "Dashboard",
     permissions: [
       {
-        key: "styleguide.view",
-        label: "View Style Guide",
-        description: "Access the design system reference page.",
+        key: "dashboard.view",
+        label: "View dashboard",
+        description: "Access the G3 overview dashboard.",
       },
     ],
   },

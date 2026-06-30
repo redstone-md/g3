@@ -22,7 +22,6 @@
     "done": "Done"
   },
   "nav": {
-    "styleGuide": "Style Guide",
     "roles": "Roles",
     "users": "Users",
     "audit": "Audit Log",
@@ -33,7 +32,8 @@
     "accounts": "Accounts",
     "storage": "Storage",
     "buckets": "Buckets",
-    "keys": "Access Keys"
+    "keys": "Access Keys",
+    "dashboard": "Dashboard"
   },
   "audit": {
     "title": "Audit Log",
@@ -71,16 +71,12 @@
   },
   "permissions": {
     "groups": {
-      "styleguide": "Style Guide",
       "users": "Users",
       "roles": "Roles",
       "audit": "Audit Log",
       "accounts": "Drive Accounts",
-      "storage": "S3 Storage"
-    },
-    "styleguide": {
-      "view": "View Style Guide",
-      "view_desc": "Access the design system reference page."
+      "storage": "S3 Storage",
+      "dashboard": "Dashboard"
     },
     "users": {
       "read": "View users",
@@ -119,6 +115,10 @@
       "read_desc": "List buckets, access keys, and balancing.",
       "write": "Manage storage",
       "write_desc": "Create buckets and access keys, set balancing."
+    },
+    "dashboard": {
+      "view": "View dashboard",
+      "view_desc": "Access the G3 overview dashboard."
     }
   },
   "header": {
@@ -134,7 +134,7 @@
   },
   "auth": {
     "welcome": "Welcome back",
-    "signInSub": "Sign in to the Ribbon dashboard.",
+    "signInSub": "Sign in to G3.",
     "email": "Email",
     "password": "Password",
     "signIn": "Sign in",
@@ -152,10 +152,6 @@
     "new": "New password",
     "confirm": "Confirm new password",
     "update": "Update password"
-  },
-  "styleGuide": {
-    "title": "Style Guide",
-    "description": "The Ribbon design system — colors, type, and components."
   },
   "roles": {
     "title": "Roles",
@@ -363,6 +359,8 @@
     "stored": "Stored",
     "accounts": "Accounts",
     "poolUsage": "Drive pool usage",
-    "of": "of"
+    "of": "of",
+    "title": "Dashboard",
+    "description": "Overview of your G3 storage."
   }
 }

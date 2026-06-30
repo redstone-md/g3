@@ -9,7 +9,7 @@ import { Fragment } from "react";
 
 // Segment → message key. `dashboard` is the Style Guide landing.
 const KEYS: Record<string, string> = {
-  dashboard: "nav.styleGuide",
+  dashboard: "nav.dashboard",
   roles: "nav.roles",
   users: "nav.users",
   accounts: "nav.accounts",

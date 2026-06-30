@@ -1,6 +1,7 @@
 import {
   Activity01Icon,
   CloudIcon,
+  DashboardSquare01Icon,
   DatabaseIcon,
   Key01Icon,
   PaintBrushIcon,
@@ -12,7 +13,7 @@ import {
 export interface NavItem {
   /** Key under the `nav` message namespace. */
   titleKey:
-    | "styleGuide"
+    | "dashboard"
     | "roles"
     | "users"
     | "accounts"
@@ -35,10 +36,10 @@ export const NAV_GROUPS: NavGroup[] = [
     labelKey: "workspace",
     items: [
       {
-        titleKey: "styleGuide",
+        titleKey: "dashboard",
         href: "/dashboard",
-        permission: "styleguide.view",
-        icon: PaintBrushIcon,
+        permission: "dashboard.view",
+        icon: DashboardSquare01Icon,
       },
     ],
   },

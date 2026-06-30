@@ -81,7 +81,7 @@ export function LoginForm({
                   name="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="admin@ribbon.local"
+                  placeholder="admin@g3.local"
                   className="pl-9"
                   required
                 />

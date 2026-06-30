@@ -1,6 +1,6 @@
 "use client";
 
-import { RibbonIcon } from "@hugeicons/core-free-icons";
+import { CloudServerIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -35,9 +35,9 @@ export function AppSidebar({ permissions }: AppSidebarProps) {
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1.5">
           <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <HugeiconsIcon icon={RibbonIcon} className="size-4" />
+            <HugeiconsIcon icon={CloudServerIcon} className="size-4" />
           </div>
-          <span className="text-base font-semibold tracking-tight">Ribbon</span>
+          <span className="text-base font-semibold tracking-tight">G3</span>
         </div>
       </SidebarHeader>
       <SidebarContent>

@@ -50,7 +50,7 @@ func HashToken(token string) string {
 // AllPermissions is the authoritative permission catalog. It mirrors
 // src/lib/permissions.ts on the frontend (oauth group removed for G3).
 var AllPermissions = []string{
-	"styleguide.view",
+	"dashboard.view",
 	"users.read", "users.create", "users.update", "users.delete",
 	"roles.read", "roles.create", "roles.update", "roles.delete",
 	"audit.read",
