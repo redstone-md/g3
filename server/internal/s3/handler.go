@@ -334,19 +334,31 @@ func (s *Server) serveSingle(w http.ResponseWriter, r *http.Request, o *store.Ob
 		writeS3Error(w, http.StatusInternalServerError, "InternalError", "token error", o.Key)
 		return
 	}
-	resp, err := s.drive.Download(r.Context(), refresh, o.DriveFileID.String, r.Header.Get("Range"))
+
+	// Derive length/range from our own metadata, not Drive's response headers
+	// (the Drive client transparently decompresses, so its Content-Length can
+	// disagree with the streamed bytes and break the client's download).
+	start, end, isRange := parseRange(r.Header.Get("Range"), o.Size)
+	rangeHeader := ""
+	if isRange {
+		rangeHeader = fmt.Sprintf("bytes=%d-%d", start, end)
+	}
+
+	resp, err := s.drive.Download(r.Context(), refresh, o.DriveFileID.String, rangeHeader)
 	if err != nil {
 		writeS3Error(w, http.StatusBadGateway, "InternalError", err.Error(), o.Key)
 		return
 	}
 	defer resp.Body.Close()
-	if cl := resp.Header.Get("Content-Length"); cl != "" {
-		w.Header().Set("Content-Length", cl)
+
+	if isRange {
+		w.Header().Set("Content-Length", strconv.FormatInt(end-start+1, 10))
+		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, o.Size))
+		w.WriteHeader(http.StatusPartialContent)
+	} else {
+		w.Header().Set("Content-Length", strconv.FormatInt(o.Size, 10))
+		w.WriteHeader(http.StatusOK)
 	}
-	if cr := resp.Header.Get("Content-Range"); cr != "" {
-		w.Header().Set("Content-Range", cr)
-	}
-	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
 }
 

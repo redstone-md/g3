@@ -123,8 +123,17 @@ func (s *Server) AbortMultipart(ctx context.Context, mu *store.MultipartUpload) 
 	return s.store.DeleteMultipart(mu.UploadID)
 }
 
-// openMultipartRange streams a byte range [start, end] across the manifest's
-// parts (end == -1 means to EOF). Returns a reader the caller must Close.
+// segment is the byte range of one part that overlaps the requested range.
+type segment struct {
+	accountID, fileID string
+	from, to          int64
+}
+
+// openMultipartRange returns a reader that lazily streams the byte range
+// [start, end] across the manifest's parts (end == -1 means to EOF). Each
+// part's Drive download is opened only when the reader reaches it, so the
+// first byte arrives after one round-trip and connections are held one at a
+// time. The caller must Close the reader.
 func (s *Server) openMultipartRange(ctx context.Context, parts []manifestPart, start, end int64) (io.ReadCloser, error) {
 	if end < 0 {
 		var total int64
@@ -133,31 +142,13 @@ func (s *Server) openMultipartRange(ctx context.Context, parts []manifestPart, s
 		}
 		end = total - 1
 	}
-	tokens := map[string]string{}
-	refreshFor := func(accountID string) (string, error) {
-		if r, ok := tokens[accountID]; ok {
-			return r, nil
-		}
-		acc, err := s.store.DriveAccountByID(accountID)
-		if err != nil {
-			return "", err
-		}
-		r, err := s.refreshFor(acc)
-		if err != nil {
-			return "", err
-		}
-		tokens[accountID] = r
-		return r, nil
-	}
-
-	var readers []io.Reader
-	var closers []io.Closer
+	var segs []segment
 	var cursor int64
 	for _, p := range parts {
 		partStart, partEnd := cursor, cursor+p.Size-1
 		cursor += p.Size
 		if partEnd < start || partStart > end {
-			continue // part is entirely outside the requested range
+			continue
 		}
 		from := int64(0)
 		if start > partStart {
@@ -167,36 +158,73 @@ func (s *Server) openMultipartRange(ctx context.Context, parts []manifestPart, s
 		if end < partEnd {
 			to = end - partStart
 		}
-		refresh, err := refreshFor(p.AccountID)
-		if err != nil {
-			closeAll(closers)
-			return nil, err
-		}
-		rangeHeader := fmt.Sprintf("bytes=%d-%d", from, to)
-		resp, err := s.drive.Download(ctx, refresh, p.DriveFileID, rangeHeader)
-		if err != nil {
-			closeAll(closers)
-			return nil, err
-		}
-		readers = append(readers, resp.Body)
-		closers = append(closers, resp.Body)
+		segs = append(segs, segment{accountID: p.AccountID, fileID: p.DriveFileID, from: from, to: to})
 	}
-	return &multiReadCloser{r: io.MultiReader(readers...), closers: closers}, nil
+	return &lazyMultipartReader{srv: s, ctx: ctx, segs: segs, tokens: map[string]string{}}, nil
 }
 
-type multiReadCloser struct {
-	r       io.Reader
-	closers []io.Closer
+// lazyMultipartReader streams parts on demand, opening the next part's Drive
+// download only when the current one is exhausted.
+type lazyMultipartReader struct {
+	srv    *Server
+	ctx    context.Context
+	segs   []segment
+	idx    int
+	cur    io.ReadCloser
+	tokens map[string]string
 }
 
-func (m *multiReadCloser) Read(p []byte) (int, error) { return m.r.Read(p) }
-func (m *multiReadCloser) Close() error {
-	closeAll(m.closers)
+func (l *lazyMultipartReader) refresh(accountID string) (string, error) {
+	if r, ok := l.tokens[accountID]; ok {
+		return r, nil
+	}
+	acc, err := l.srv.store.DriveAccountByID(accountID)
+	if err != nil {
+		return "", err
+	}
+	r, err := l.srv.refreshFor(acc)
+	if err != nil {
+		return "", err
+	}
+	l.tokens[accountID] = r
+	return r, nil
+}
+
+func (l *lazyMultipartReader) Read(p []byte) (int, error) {
+	for {
+		if l.cur == nil {
+			if l.idx >= len(l.segs) {
+				return 0, io.EOF
+			}
+			seg := l.segs[l.idx]
+			l.idx++
+			refresh, err := l.refresh(seg.accountID)
+			if err != nil {
+				return 0, err
+			}
+			resp, err := l.srv.drive.Download(l.ctx, refresh, seg.fileID,
+				fmt.Sprintf("bytes=%d-%d", seg.from, seg.to))
+			if err != nil {
+				return 0, err
+			}
+			l.cur = resp.Body
+		}
+		n, err := l.cur.Read(p)
+		if err == io.EOF {
+			_ = l.cur.Close()
+			l.cur = nil
+			if n > 0 {
+				return n, nil
+			}
+			continue // move to the next segment
+		}
+		return n, err
+	}
+}
+
+func (l *lazyMultipartReader) Close() error {
+	if l.cur != nil {
+		return l.cur.Close()
+	}
 	return nil
-}
-
-func closeAll(cs []io.Closer) {
-	for _, c := range cs {
-		_ = c.Close()
-	}
 }
