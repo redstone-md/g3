@@ -29,6 +29,17 @@ export interface AuditLogDTO {
   createdAt: string;
 }
 
+/** A linked Google Drive storage account. */
+export interface AccountDTO {
+  id: string;
+  email: string;
+  status: string;
+  weight: number;
+  storageLimit: number;
+  storageUsage: number;
+  createdAt: string;
+}
+
 export interface UserDTO {
   id: string;
   email: string;

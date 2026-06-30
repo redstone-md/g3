@@ -28,7 +28,9 @@
     "workspace": "Workspace",
     "access": "Access",
     "integrations": "Integrations",
-    "monitoring": "Monitoring"
+    "monitoring": "Monitoring",
+    "accounts": "Accounts",
+    "storage": "Storage"
   },
   "audit": {
     "title": "Audit Log",
@@ -69,7 +71,8 @@
       "styleguide": "Style Guide",
       "users": "Users",
       "roles": "Roles",
-      "audit": "Audit Log"
+      "audit": "Audit Log",
+      "accounts": "Drive Accounts"
     },
     "styleguide": {
       "view": "View Style Guide",
@@ -98,6 +101,14 @@
     "audit": {
       "read": "View audit log",
       "read_desc": "Read the system activity log."
+    },
+    "accounts": {
+      "read": "View accounts",
+      "read_desc": "List linked Google Drive storage accounts.",
+      "create": "Link accounts",
+      "create_desc": "Connect new Google Drive accounts to the pool.",
+      "delete": "Remove accounts",
+      "delete_desc": "Unlink Google Drive accounts."
     }
   },
   "header": {
@@ -274,5 +285,25 @@
     "signIn": "Go to sign in",
     "forbiddenTitle": "Access denied",
     "forbiddenDescription": "You don't have permission to view this page."
+  },
+  "accounts": {
+    "title": "Drive Accounts",
+    "description": "Google accounts pooled as S3 storage backends.",
+    "add": "Add Google account",
+    "account": "Account",
+    "usage": "Usage",
+    "weight": "Weight",
+    "connected": "Connected",
+    "statusError": "Error",
+    "unlimited": "Unlimited",
+    "refresh": "Refresh quota",
+    "refreshed": "Quota refreshed.",
+    "remove": "Remove",
+    "removeTitle": "Remove account",
+    "removeWarning": "objects stored on it will become unreachable.",
+    "removed": "Account removed.",
+    "empty": "No Google accounts linked yet.",
+    "linked": "Google account linked.",
+    "linkError": "Linking failed ({reason})."
   }
 }

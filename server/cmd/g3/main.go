@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"g3/internal/config"
+	"g3/internal/crypto"
+	"g3/internal/drive"
 	"g3/internal/httpd"
 	"g3/internal/store"
 )
@@ -27,7 +29,20 @@ func main() {
 	}
 	defer st.Close()
 
-	srv, err := httpd.New(cfg, st)
+	key, err := crypto.LoadOrCreateKey(cfg.EncryptionKey, cfg.DataDir)
+	if err != nil {
+		log.Fatalf("[g3] encryption key: %v", err)
+	}
+	cipher, err := crypto.New(key)
+	if err != nil {
+		log.Fatalf("[g3] cipher: %v", err)
+	}
+	driveMgr := drive.New(cfg.GoogleClientID, cfg.GoogleClientSecret, cfg.GoogleRedirectURI)
+	if !driveMgr.Configured() {
+		log.Println("[g3] Google Drive not configured (set G3_GOOGLE_* to enable account linking)")
+	}
+
+	srv, err := httpd.New(cfg, st, cipher, driveMgr)
 	if err != nil {
 		log.Fatalf("[g3] server: %v", err)
 	}

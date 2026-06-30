@@ -8,23 +8,27 @@ import (
 	"time"
 
 	"g3/internal/config"
+	"g3/internal/crypto"
+	"g3/internal/drive"
 	"g3/internal/store"
 )
 
 // api carries shared dependencies for handlers.
 type api struct {
-	store *store.Store
-	cfg   config.Config
+	store  *store.Store
+	cfg    config.Config
+	cipher *crypto.Cipher
+	drive  *drive.Manager
 }
 
 // New builds the configured HTTP server.
-func New(cfg config.Config, st *store.Store) (*http.Server, error) {
+func New(cfg config.Config, st *store.Store, cipher *crypto.Cipher, driveMgr *drive.Manager) (*http.Server, error) {
 	static, err := newStaticHandler()
 	if err != nil {
 		return nil, err
 	}
 
-	a := &api{store: st, cfg: cfg}
+	a := &api{store: st, cfg: cfg, cipher: cipher, drive: driveMgr}
 	mux := http.NewServeMux()
 
 	// Panel API — auth + session.
@@ -47,6 +51,14 @@ func New(cfg config.Config, st *store.Store) (*http.Server, error) {
 
 	// Audit.
 	mux.HandleFunc("GET /api/audit", a.listAudit)
+
+	// Google Drive storage accounts.
+	mux.HandleFunc("GET /api/accounts", a.listAccounts)
+	mux.HandleFunc("GET /api/accounts/connect", a.connectAccount)
+	mux.HandleFunc("GET /api/accounts/callback", a.accountCallback)
+	mux.HandleFunc("POST /api/accounts/{id}/refresh", a.refreshAccount)
+	mux.HandleFunc("PATCH /api/accounts/{id}", a.updateAccount)
+	mux.HandleFunc("DELETE /api/accounts/{id}", a.deleteDriveAccount)
 
 	// Account (self-service).
 	mux.HandleFunc("GET /api/account/sessions", a.listSessions)

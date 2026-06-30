@@ -1,5 +1,6 @@
 import {
   Activity01Icon,
+  CloudIcon,
   PaintBrushIcon,
   ShieldUserIcon,
   UserMultipleIcon,
@@ -8,7 +9,7 @@ import {
 /** Sidebar navigation, gated by permission. Client-safe (no server-only). */
 export interface NavItem {
   /** Key under the `nav` message namespace. */
-  titleKey: "styleGuide" | "roles" | "users" | "audit";
+  titleKey: "styleGuide" | "roles" | "users" | "accounts" | "audit";
   href: string;
   permission: string;
   icon: typeof PaintBrushIcon;
@@ -16,7 +17,7 @@ export interface NavItem {
 
 export interface NavGroup {
   /** Key under the `nav` message namespace for the group label. */
-  labelKey: "workspace" | "access" | "integrations" | "monitoring";
+  labelKey: "workspace" | "access" | "storage" | "monitoring";
   items: NavItem[];
 }
 
@@ -46,6 +47,17 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/dashboard/roles",
         permission: "roles.read",
         icon: ShieldUserIcon,
+      },
+    ],
+  },
+  {
+    labelKey: "storage",
+    items: [
+      {
+        titleKey: "accounts",
+        href: "/dashboard/accounts",
+        permission: "accounts.read",
+        icon: CloudIcon,
       },
     ],
   },

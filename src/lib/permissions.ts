@@ -85,6 +85,27 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     ],
   },
   {
+    key: "accounts",
+    label: "Drive Accounts",
+    permissions: [
+      {
+        key: "accounts.read",
+        label: "View accounts",
+        description: "List linked Google Drive storage accounts.",
+      },
+      {
+        key: "accounts.create",
+        label: "Link accounts",
+        description: "Connect new Google Drive accounts to the pool.",
+      },
+      {
+        key: "accounts.delete",
+        label: "Remove accounts",
+        description: "Unlink Google Drive accounts.",
+      },
+    ],
+  },
+  {
     key: "audit",
     label: "Audit Log",
     permissions: [

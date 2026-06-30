@@ -77,6 +77,22 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log(created_at DESC);
+
+-- Google Drive storage backends. The refresh token is stored encrypted
+-- (AES-GCM); object bytes live in each account's Drive, never on local disk.
+CREATE TABLE IF NOT EXISTS drive_accounts (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  refresh_token TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'connected',
+  weight INTEGER NOT NULL DEFAULT 1,
+  folder_id TEXT,
+  storage_limit INTEGER NOT NULL DEFAULT 0,
+  storage_usage INTEGER NOT NULL DEFAULT 0,
+  last_sync_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 `
 
 // Open creates (if needed) and opens the metadata DB, applies the schema, and
@@ -101,7 +117,20 @@ func Open(dataDir, adminEmail, adminPassword string) (*Store, error) {
 	if err := s.seedAdmin(adminEmail, adminPassword); err != nil {
 		return nil, fmt.Errorf("seed admin: %w", err)
 	}
+	if err := s.syncSystemAdminPermissions(); err != nil {
+		return nil, fmt.Errorf("sync admin perms: %w", err)
+	}
 	return s, nil
+}
+
+// syncSystemAdminPermissions keeps every system role's permission set equal to
+// the full catalog, so capabilities added in newer versions reach existing DBs.
+func (s *Store) syncSystemAdminPermissions() error {
+	perms, _ := json.Marshal(auth.AllPermissions)
+	_, err := s.DB.Exec(
+		`UPDATE roles SET permissions = ?, updated_at = ? WHERE is_system = 1`,
+		string(perms), time.Now().UTC().Format(time.RFC3339))
+	return err
 }
 
 // Close releases the database handle.

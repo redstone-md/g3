@@ -54,6 +54,7 @@ var AllPermissions = []string{
 	"users.read", "users.create", "users.update", "users.delete",
 	"roles.read", "roles.create", "roles.update", "roles.delete",
 	"audit.read",
+	"accounts.read", "accounts.create", "accounts.delete",
 }
 
 // AdminGrant is the permission whose presence marks a role as administrative
