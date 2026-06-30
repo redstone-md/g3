@@ -1,18 +1,12 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/login-form";
-import { getCurrentUser } from "@/lib/dal";
-import { isSsoConfigured } from "@/lib/oauth/sso-client";
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ next?: string; error?: string }>;
-}) {
-  const { next, error } = await searchParams;
-
-  // Authoritative check (not just cookie presence) — a revoked/stale cookie
-  // must still render the login form, never bounce, to avoid a redirect loop.
-  if (await getCurrentUser()) redirect("/dashboard");
+function LoginInner() {
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") ?? undefined;
 
   return (
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4">
@@ -21,11 +15,15 @@ export default async function LoginPage({
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,theme(colors.primary/12%),transparent_70%)]"
       />
-      <LoginForm
-        next={next}
-        showSso={isSsoConfigured()}
-        ssoError={error?.startsWith("sso_")}
-      />
+      <LoginForm next={next} />
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginInner />
+    </Suspense>
   );
 }

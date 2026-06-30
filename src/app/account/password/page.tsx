@@ -1,8 +1,18 @@
-import { ChangePasswordForm } from "@/components/auth/change-password-form";
-import { verifySession } from "@/lib/dal";
+"use client";
 
-export default async function ChangePasswordPage() {
-  const user = await verifySession();
+import { useEffect } from "react";
+import { ChangePasswordForm } from "@/components/auth/change-password-form";
+import { useMeQuery } from "@/hooks/use-auth";
+import { QueryProvider } from "@/providers/query-provider";
+
+function ChangePasswordInner() {
+  const { data: user, isError } = useMeQuery();
+
+  useEffect(() => {
+    if (isError) window.location.assign("/login");
+  }, [isError]);
+
+  if (!user) return null;
 
   return (
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4">
@@ -12,5 +22,13 @@ export default async function ChangePasswordPage() {
       />
       <ChangePasswordForm mustChange={user.mustChangePassword} />
     </main>
+  );
+}
+
+export default function ChangePasswordPage() {
+  return (
+    <QueryProvider>
+      <ChangePasswordInner />
+    </QueryProvider>
   );
 }

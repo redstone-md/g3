@@ -1,9 +1,11 @@
+"use client";
+
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
-export default async function NotFound() {
-  const t = await getTranslations("errors");
+export default function NotFound() {
+  const t = useTranslations("errors");
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-4 text-center">
       <p className="text-5xl font-bold tracking-tight text-muted-foreground">

@@ -1,16 +1,8 @@
 import type { Metadata } from "next";
 import { Figtree, Geist_Mono } from "next/font/google";
-import { cookies } from "next/headers";
-import { NextIntlClientProvider } from "next-intl";
-import { getLocale } from "next-intl/server";
+import { IntlProvider } from "@/components/i18n/intl-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { THEME_COOKIE } from "@/lib/auth-constants";
-import { MOTION_COOKIE, motionClass } from "@/lib/motion";
-import { themeClass } from "@/lib/themes";
 import { cn } from "@/lib/utils";
-import { NavProgress } from "@/providers/nav-progress";
-import { SmoothScroll } from "@/providers/smooth-scroll";
 import "./globals.css";
 import "./themes.css";
 import "./transitions.css";
@@ -22,48 +14,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ribbon",
-  description: "Admin dashboard with role-based access control.",
+  title: "G3",
+  description: "S3-compatible storage backed by Google Drive.",
 };
 
-export default async function RootLayout({
+// Applied before first paint to avoid a flash of the wrong theme/locale. The
+// static export has no per-user SSR, so these are read from cookies on the
+// client. Defaults match the schema (modern-minimal / smooth / ru).
+const FOUC_INIT = `(function(){try{var c=document.documentElement;function g(n){var m=document.cookie.match('(?:^|; )'+n+'=([^;]*)');return m&&decodeURIComponent(m[1]);}c.classList.add('theme-'+(g('ribbon_theme')||'modern-minimal'));c.classList.add('motion-'+(g('ribbon_motion')||'smooth'));c.lang=g('ribbon_locale')||'ru';}catch(e){}})();`;
+
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const cookieStore = await cookies();
-  const themeCookie = cookieStore.get(THEME_COOKIE)?.value;
-  const motionCookie = cookieStore.get(MOTION_COOKIE)?.value;
-  const locale = await getLocale();
-
   return (
     <html
-      lang={locale}
-      className={cn(
-        "dark h-full",
-        themeClass(themeCookie ?? ""),
-        motionClass(motionCookie ?? ""),
-        figtree.variable,
-        geistMono.variable,
-      )}
+      lang="ru"
+      className={cn("dark h-full", figtree.variable, geistMono.variable)}
       suppressHydrationWarning
     >
-      {process.env.NODE_ENV !== "production" ? (
-        <head>
-          {/* tweakcn live theme preview — dev only */}
-          <script
-            async
-            crossOrigin="anonymous"
-            src="https://tweakcn.com/live-preview.min.js"
-          />
-        </head>
-      ) : null}
+      <head>
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: pre-paint theme/locale init */}
+        <script dangerouslySetInnerHTML={{ __html: FOUC_INIT }} />
+      </head>
       <body className="min-h-full bg-background font-sans text-foreground antialiased">
-        <NextIntlClientProvider>
-          <SmoothScroll>
-            <NavProgress>
-              <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-            </NavProgress>
-          </SmoothScroll>
-        </NextIntlClientProvider>
+        <IntlProvider>{children}</IntlProvider>
         <Toaster position="top-right" />
       </body>
     </html>

@@ -1,4 +1,7 @@
-import { getTranslations } from "next-intl/server";
+"use client";
+
+import { useTranslations } from "next-intl";
+import { useAuth } from "@/components/auth/auth-context";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { AccountSection } from "@/components/settings/account-section";
 import { AppearanceSection } from "@/components/settings/appearance-section";
@@ -7,15 +10,10 @@ import { NotificationsSection } from "@/components/settings/notifications-sectio
 import { ProfileSection } from "@/components/settings/profile-section";
 import { SessionsSection } from "@/components/settings/sessions-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { adminUserCount, grantsAdmin } from "@/lib/admin-guard";
-import { verifySession } from "@/lib/dal";
 
-export default async function SettingsPage() {
-  const user = await verifySession();
-  const t = await getTranslations("settings");
-  // The last administrator cannot delete their own account.
-  const isLastAdmin =
-    grantsAdmin(user.permissions) && (await adminUserCount()) <= 1;
+export default function SettingsPage() {
+  const user = useAuth();
+  const t = useTranslations("settings");
 
   return (
     <>
@@ -49,7 +47,7 @@ export default async function SettingsPage() {
           <SessionsSection />
         </TabsContent>
         <TabsContent value="account" className="mt-4">
-          <AccountSection email={user.email} isLastAdmin={isLastAdmin} />
+          <AccountSection email={user.email} isLastAdmin={user.isLastAdmin} />
         </TabsContent>
       </Tabs>
     </>

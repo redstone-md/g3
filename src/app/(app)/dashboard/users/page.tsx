@@ -1,7 +1,11 @@
-import { UsersView } from "@/components/users/users-view";
-import { requirePermission } from "@/lib/dal";
+"use client";
 
-export default async function UsersPage() {
-  const user = await requirePermission("users.read");
+import { useAuth } from "@/components/auth/auth-context";
+import { ForbiddenView } from "@/components/dashboard/forbidden-view";
+import { UsersView } from "@/components/users/users-view";
+
+export default function UsersPage() {
+  const user = useAuth();
+  if (!user.permissions.includes("users.read")) return <ForbiddenView />;
   return <UsersView permissions={user.permissions} currentUserId={user.id} />;
 }
