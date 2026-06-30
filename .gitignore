@@ -44,7 +44,9 @@ next-env.d.ts
 # go / g3 backend
 /g3
 /g3.exe
-/server/internal/httpd/dist/
+# embedded frontend bundle (built by `make build`); keep the placeholder
+/server/internal/httpd/dist/*
+!/server/internal/httpd/dist/.gitkeep
 /g3-data/
 *.db
 *.db-shm
