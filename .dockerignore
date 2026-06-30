@@ -1,0 +1,17 @@
+.git
+node_modules
+.next
+out
+g3-data
+*.exe
+g3
+server/internal/httpd/dist/_next
+server/internal/httpd/dist/*.html
+server/internal/httpd/dist/*.txt
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.*
+!.env.example
+.claude
