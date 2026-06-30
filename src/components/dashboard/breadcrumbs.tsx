@@ -14,6 +14,7 @@ const KEYS: Record<string, string> = {
   users: "nav.users",
   accounts: "nav.accounts",
   buckets: "nav.buckets",
+  objects: "objects.title",
   keys: "nav.keys",
   audit: "nav.audit",
   settings: "settings.title",

@@ -10,6 +10,7 @@ import (
 	"g3/internal/config"
 	"g3/internal/crypto"
 	"g3/internal/drive"
+	"g3/internal/s3"
 	"g3/internal/store"
 )
 
@@ -19,16 +20,17 @@ type api struct {
 	cfg    config.Config
 	cipher *crypto.Cipher
 	drive  *drive.Manager
+	engine *s3.Server
 }
 
 // New builds the configured HTTP server.
-func New(cfg config.Config, st *store.Store, cipher *crypto.Cipher, driveMgr *drive.Manager) (*http.Server, error) {
+func New(cfg config.Config, st *store.Store, cipher *crypto.Cipher, driveMgr *drive.Manager, engine *s3.Server) (*http.Server, error) {
 	static, err := newStaticHandler()
 	if err != nil {
 		return nil, err
 	}
 
-	a := &api{store: st, cfg: cfg, cipher: cipher, drive: driveMgr}
+	a := &api{store: st, cfg: cfg, cipher: cipher, drive: driveMgr, engine: engine}
 	mux := http.NewServeMux()
 
 	// Panel API — auth + session.
@@ -64,6 +66,13 @@ func New(cfg config.Config, st *store.Store, cipher *crypto.Cipher, driveMgr *dr
 	mux.HandleFunc("GET /api/buckets", a.listBuckets)
 	mux.HandleFunc("POST /api/buckets", a.createBucket)
 	mux.HandleFunc("DELETE /api/buckets/{id}", a.deleteBucket)
+	// File manager.
+	mux.HandleFunc("GET /api/buckets/{id}/objects", a.listBucketObjects)
+	mux.HandleFunc("GET /api/buckets/{id}/object", a.downloadObject)
+	mux.HandleFunc("POST /api/buckets/{id}/object", a.uploadObject)
+	mux.HandleFunc("DELETE /api/buckets/{id}/object", a.deleteObjectPanel)
+	mux.HandleFunc("GET /api/buckets/{id}/policy", a.getBucketPolicy)
+	mux.HandleFunc("PUT /api/buckets/{id}/policy", a.setBucketPolicy)
 	mux.HandleFunc("GET /api/keys", a.listKeys)
 	mux.HandleFunc("POST /api/keys", a.createKey)
 	mux.HandleFunc("DELETE /api/keys/{id}", a.deleteKey)

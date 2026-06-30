@@ -61,6 +61,16 @@ func (s *Store) BucketByName(name string) (*Bucket, error) {
 	return &b, err
 }
 
+func (s *Store) BucketByID(id string) (*Bucket, error) {
+	var b Bucket
+	err := s.DB.QueryRow(`SELECT id, name, created_at FROM buckets WHERE id = ?`, id).
+		Scan(&b.ID, &b.Name, &b.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	return &b, err
+}
+
 func (s *Store) CreateBucket(name string) (string, error) {
 	id := auth.NewID()
 	_, err := s.DB.Exec(`INSERT INTO buckets (id, name, created_at) VALUES (?, ?, ?)`,

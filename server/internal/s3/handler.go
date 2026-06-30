@@ -81,6 +81,12 @@ func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) (*credenti
 	return cred, true
 }
 
+// ServeObject streams an object (or an S3 error) to w. Used by the panel file
+// manager for in-browser download/preview (separate from the SigV4 S3 API).
+func (s *Server) ServeObject(w http.ResponseWriter, r *http.Request, b *store.Bucket, key string) {
+	s.getObject(w, r, b, key, true)
+}
+
 func splitPath(p string) (bucket, key string) {
 	p = strings.TrimPrefix(p, "/")
 	if p == "" {

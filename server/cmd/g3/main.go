@@ -43,7 +43,10 @@ func main() {
 		log.Println("[g3] Google Drive not configured (set G3_GOOGLE_* to enable account linking)")
 	}
 
-	srv, err := httpd.New(cfg, st, cipher, driveMgr)
+	// One storage engine shared by the S3 API and the panel file manager.
+	engine := s3.New(st, driveMgr, cipher)
+
+	srv, err := httpd.New(cfg, st, cipher, driveMgr, engine)
 	if err != nil {
 		log.Fatalf("[g3] server: %v", err)
 	}
@@ -51,7 +54,7 @@ func main() {
 	// S3-compatible API on its own listener (separate from the panel/SPA).
 	s3srv := &http.Server{
 		Addr:              cfg.S3Addr,
-		Handler:           s3.New(st, driveMgr, cipher),
+		Handler:           engine,
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

@@ -362,5 +362,27 @@
     "of": "of",
     "title": "Dashboard",
     "description": "Overview of your G3 storage."
+  },
+  "objects": {
+    "title": "Files",
+    "description": "Browse and manage objects in this bucket.",
+    "upload": "Upload",
+    "uploading": "Uploading…",
+    "uploaded": "File uploaded.",
+    "download": "Download",
+    "delete": "Delete",
+    "deleteTitle": "Delete object",
+    "deleted": "Object deleted.",
+    "empty": "This folder is empty.",
+    "name": "Name",
+    "size": "Size",
+    "modified": "Modified",
+    "root": "Root",
+    "backToBuckets": "Buckets",
+    "policy": "Bucket policy",
+    "policyDescription": "Optional JSON access policy for this bucket.",
+    "policyPlaceholder": "{\"Version\":\"2012-10-17\",\"Statement\":[]}",
+    "savePolicy": "Save policy",
+    "policySaved": "Policy saved."
   }
 }

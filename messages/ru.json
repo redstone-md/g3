@@ -362,5 +362,27 @@
     "of": "из",
     "title": "Дашборд",
     "description": "Обзор вашего хранилища G3."
+  },
+  "objects": {
+    "title": "Файлы",
+    "description": "Просмотр и управление объектами в бакете.",
+    "upload": "Загрузить",
+    "uploading": "Загрузка…",
+    "uploaded": "Файл загружен.",
+    "download": "Скачать",
+    "delete": "Удалить",
+    "deleteTitle": "Удалить объект",
+    "deleted": "Объект удалён.",
+    "empty": "Папка пуста.",
+    "name": "Имя",
+    "size": "Размер",
+    "modified": "Изменён",
+    "root": "Корень",
+    "backToBuckets": "Бакеты",
+    "policy": "Политика бакета",
+    "policyDescription": "Необязательная JSON-политика доступа для бакета.",
+    "policyPlaceholder": "{\"Version\":\"2012-10-17\",\"Statement\":[]}",
+    "savePolicy": "Сохранить политику",
+    "policySaved": "Политика сохранена."
   }
 }

@@ -1,7 +1,12 @@
 "use client";
 
-import { Delete02Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
+import {
+  Delete02Icon,
+  FolderOpenIcon,
+  PlusSignIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -60,6 +65,7 @@ const STRATEGIES: BalancingStrategy[] = [
 export function BucketsView({ permissions }: { permissions: string[] }) {
   const t = useTranslations("buckets");
   const tc = useTranslations("common");
+  const router = useRouter();
   const { data: buckets, isLoading, error } = useBuckets();
   const create = useCreateBucket();
   const remove = useDeleteBucket();
@@ -143,8 +149,20 @@ export function BucketsView({ permissions }: { permissions: string[] }) {
                   </TableRow>
                 ))
               : buckets?.map((b) => (
-                  <TableRow key={b.id} className="h-14">
-                    <TableCell className="font-mono font-medium">{b.name}</TableCell>
+                  <TableRow
+                    key={b.id}
+                    className="h-14 cursor-pointer"
+                    onClick={() => router.push(`/dashboard/objects?bucket=${b.id}`)}
+                  >
+                    <TableCell className="font-mono font-medium">
+                      <span className="flex items-center gap-2">
+                        <HugeiconsIcon
+                          icon={FolderOpenIcon}
+                          className="size-4 text-primary"
+                        />
+                        {b.name}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {b.objectCount}
                     </TableCell>
@@ -157,7 +175,10 @@ export function BucketsView({ permissions }: { permissions: string[] }) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => setToDelete(b)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setToDelete(b);
+                            }}
                             aria-label={t("delete")}
                           >
                             <HugeiconsIcon icon={Delete02Icon} />
