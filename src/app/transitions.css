@@ -1,0 +1,410 @@
+/* transitions.dev — semantic motion tokens + project transitions.
+   See https://transitions.dev. Every t-* snippet reads from these names. */
+:root {
+  /* Card resize */
+  --resize-dur: 300ms;
+  --resize-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Number pop-in */
+  --digit-dur: 500ms;
+  --digit-distance: 8px;
+  --digit-stagger: 70ms;
+  --digit-blur: 2px;
+  --digit-ease: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --digit-dir-x: 0;
+  --digit-dir-y: 1;
+  /* Notification badge */
+  --badge-slide-dur: 260ms;
+  --badge-pop-dur: 500ms;
+  --badge-pop-close-dur: 180ms;
+  --badge-fade-dur: 400ms;
+  --badge-fade-close-dur: 180ms;
+  --badge-blur: 2px;
+  --badge-offset-x: -8.2px;
+  --badge-offset-y: 12.4px;
+  --badge-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --badge-pop-ease: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --badge-close-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Text states swap */
+  --text-swap-dur: 150ms;
+  --text-swap-translate-y: 4px;
+  --text-swap-blur: 2px;
+  --text-swap-ease: ease-in-out;
+  /* Menu dropdown */
+  --dropdown-open-dur: 250ms;
+  --dropdown-close-dur: 150ms;
+  --dropdown-pre-scale: 0.97;
+  --dropdown-closing-scale: 0.99;
+  --dropdown-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Modal open / close — default "smooth" preset (expo-out, long gentle tail) */
+  --modal-open-dur: 450ms;
+  --modal-close-dur: 290ms;
+  --modal-scale: 0.94;
+  --modal-scale-close: 0.96;
+  /* Strong, clearly non-linear ease-out (transitions.dev house curve) for
+     close + slide surfaces; the open "pop" adds a small spring overshoot so the
+     entrance reads bouncy, not flat. */
+  --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --modal-ease-pop: cubic-bezier(0.34, 1.3, 0.64, 1);
+  /* Panel reveal */
+  --panel-open-dur: 400ms;
+  --panel-close-dur: 350ms;
+  --panel-translate-y: 100px;
+  --panel-blur: 2px;
+  --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Page enter — default "smooth" preset (slow, silky) */
+  --page-slide-dur: 610ms;
+  --page-fade-dur: 450ms;
+  --page-slide-distance: 20px;
+  --page-blur: 3px;
+  --page-stagger: 0ms;
+  --page-exit-enabled: 1;
+  --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --page-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Icon swap */
+  --icon-swap-dur: 200ms;
+  --icon-swap-blur: 2px;
+  --icon-swap-start-scale: 0.25;
+  --icon-swap-ease: ease-in-out;
+  /* Success check */
+  --check-opacity-dur: 550ms;
+  --check-rotate-dur: 550ms;
+  --check-rotate-from: 80deg;
+  --check-bob-dur: 450ms;
+  --check-y-amount: 40px;
+  --check-blur-dur: 500ms;
+  --check-blur-from: 10px;
+  --check-path-dur: 550ms;
+  --check-path-delay: 80ms;
+  --check-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --check-ease-opacity: cubic-bezier(0.22, 1, 0.36, 1);
+  --check-ease-rotate: cubic-bezier(0.22, 1, 0.36, 1);
+  --check-ease-bob: cubic-bezier(0.34, 1.35, 0.64, 1);
+  --check-ease-path: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Error state shake */
+  --shake-distance: 6px;
+  --shake-overshoot: 4px;
+  --shake-dur-a: 80ms;
+  --shake-dur-b: 60ms;
+  --shake-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --revert-hold: 3000ms;
+  --revert-dur: 280ms;
+}
+
+/* --- Page / card enter (replaces the GSAP page transition + Reveal) ---
+   No translateZ/backface/persistent will-change here: promoting the whole page
+   subtree to a permanent compositor layer blurs text ("мыло"). The keyframe
+   animates transform+opacity, which the browser composites for its duration on
+   its own — that's enough, and the layer is released when it finishes. */
+.t-enter {
+  animation: t-enter var(--page-slide-dur) var(--page-slide-ease) both;
+}
+@keyframes t-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--page-slide-distance));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Error state shake (transitions.dev #12) --- */
+.t-input {
+  will-change: transform;
+}
+.t-input.is-shaking {
+  animation: t-input-shake calc(var(--shake-dur-a) * 2 + var(--shake-dur-b) * 2)
+    linear;
+}
+@keyframes t-input-shake {
+  0% {
+    transform: translateX(0);
+    animation-timing-function: var(--shake-ease);
+  }
+  28.57% {
+    transform: translateX(var(--shake-distance));
+    animation-timing-function: var(--shake-ease);
+  }
+  57.14% {
+    transform: translateX(calc(var(--shake-distance) * -1));
+    animation-timing-function: var(--shake-ease);
+  }
+  78.57% {
+    transform: translateX(var(--shake-overshoot));
+    animation-timing-function: var(--shake-ease);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* --- Motion presets (user choice, synced to the account) ---
+   Default :root above = "smooth". These classes (on <html>) retune the shared
+   tokens, so every t-* transition + Radix retune follows the chosen preset. */
+.motion-snappy {
+  --page-slide-dur: 520ms;
+  --page-fade-dur: 360ms;
+  --page-slide-distance: 16px;
+  --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --page-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --modal-open-dur: 380ms;
+  --modal-close-dur: 240ms;
+  --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --modal-ease-pop: cubic-bezier(0.34, 1.34, 0.64, 1);
+}
+.motion-none {
+  --page-slide-dur: 1ms;
+  --page-fade-dur: 1ms;
+  --modal-open-dur: 1ms;
+  --modal-close-dur: 1ms;
+  --shake-dur-a: 0ms;
+  --shake-dur-b: 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-enter,
+  .t-input.is-shaking {
+    animation: none !important;
+  }
+}
+
+/* --- Radix / shadcn overlay surfaces retuned to transitions.dev motion ---
+   tw-animate-css drives the enter/exit keyframes (so Radix Presence's
+   animationend fires before unmount); we only override the curve + duration to
+   the transitions.dev vocabulary. [data-slot][data-state] outranks the tw
+   utility classes, so this wins without editing the vendored components. */
+[data-slot="dialog-content"][data-state],
+[data-slot="dialog-overlay"][data-state],
+[data-slot="sheet-content"][data-state],
+[data-slot="sheet-overlay"][data-state],
+[data-slot="dropdown-menu-content"][data-state],
+[data-slot="select-content"][data-state],
+[data-slot="popover-content"][data-state],
+[data-slot="tooltip-content"][data-state] {
+  animation-timing-function: var(--modal-ease);
+}
+[data-slot="dialog-content"][data-state="open"],
+[data-slot="dialog-overlay"][data-state="open"],
+[data-slot="sheet-content"][data-state="open"],
+[data-slot="sheet-overlay"][data-state="open"],
+[data-slot="dropdown-menu-content"][data-state="open"],
+[data-slot="select-content"][data-state="open"],
+[data-slot="popover-content"][data-state="open"],
+[data-slot="tooltip-content"][data-state="open"] {
+  animation-duration: var(--modal-open-dur);
+}
+[data-slot="dialog-content"][data-state="closed"],
+[data-slot="dialog-overlay"][data-state="closed"],
+[data-slot="sheet-content"][data-state="closed"],
+[data-slot="sheet-overlay"][data-state="closed"],
+[data-slot="dropdown-menu-content"][data-state="closed"],
+[data-slot="select-content"][data-state="closed"],
+[data-slot="popover-content"][data-state="closed"],
+[data-slot="tooltip-content"][data-state="closed"] {
+  animation-duration: var(--modal-close-dur);
+}
+/* Springy overshoot on the scale-up "pop" surfaces (modal, cmdk dialog,
+   dropdown, select, popover). Comes after the base group so it wins on equal
+   specificity. Sheet (slide) + overlays (fade) keep the plain ease — overshoot
+   on a slide/fade reads as a wobble, not a spring. */
+[data-slot="dialog-content"][data-state="open"],
+[data-slot="dropdown-menu-content"][data-state="open"],
+[data-slot="select-content"][data-state="open"],
+[data-slot="popover-content"][data-state="open"] {
+  animation-timing-function: var(--modal-ease-pop);
+}
+
+/* --- Icon swap (transitions.dev 09) — two icons cross-fade in one slot --- */
+.t-icon-swap {
+  position: relative;
+  display: inline-grid;
+}
+.t-icon-swap .t-icon {
+  grid-area: 1 / 1;
+  transition:
+    opacity var(--icon-swap-dur) var(--icon-swap-ease),
+    filter var(--icon-swap-dur) var(--icon-swap-ease),
+    transform var(--icon-swap-dur) var(--icon-swap-ease);
+  will-change: opacity, filter, transform;
+}
+.t-icon-swap[data-state="a"] .t-icon[data-icon="a"],
+.t-icon-swap[data-state="b"] .t-icon[data-icon="b"] {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+.t-icon-swap[data-state="a"] .t-icon[data-icon="b"],
+.t-icon-swap[data-state="b"] .t-icon[data-icon="a"] {
+  opacity: 0;
+  filter: blur(var(--icon-swap-blur));
+  transform: scale(var(--icon-swap-start-scale));
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-icon-swap .t-icon {
+    transition: none !important;
+  }
+}
+
+/* --- Number pop-in (transitions.dev 02) — digits re-enter on value change --- */
+@keyframes t-digit-pop-in {
+  0% {
+    transform: translate(
+      calc(var(--digit-distance) * var(--digit-dir-x)),
+      calc(var(--digit-distance) * var(--digit-dir-y))
+    );
+    opacity: 0;
+    filter: blur(var(--digit-blur));
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+.t-digit-group {
+  display: inline-flex;
+  align-items: baseline;
+}
+.t-digit {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+.t-digit-group.is-animating .t-digit {
+  animation: t-digit-pop-in var(--digit-dur) var(--digit-ease) both;
+}
+.t-digit-group.is-animating .t-digit[data-stagger="1"] {
+  animation-delay: var(--digit-stagger);
+}
+.t-digit-group.is-animating .t-digit[data-stagger="2"] {
+  animation-delay: calc(var(--digit-stagger) * 2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-digit-group .t-digit {
+    animation: none !important;
+  }
+}
+
+/* --- Text states swap (transitions.dev 04) — label changes in place --- */
+.t-text-swap {
+  display: inline-block;
+  transform: translateY(0);
+  filter: blur(0);
+  opacity: 1;
+  transition:
+    transform var(--text-swap-dur) var(--text-swap-ease),
+    filter var(--text-swap-dur) var(--text-swap-ease),
+    opacity var(--text-swap-dur) var(--text-swap-ease);
+}
+.t-text-swap.is-exit {
+  transform: translateY(calc(var(--text-swap-translate-y) * -1));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+}
+.t-text-swap.is-enter-start {
+  transform: translateY(var(--text-swap-translate-y));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-text-swap {
+    transition: none !important;
+  }
+}
+
+/* --- Selection checkmark pop (icon-swap tokens, springy) — tick mounts in --- */
+@keyframes t-check-pop {
+  from {
+    opacity: 0;
+    transform: scale(var(--icon-swap-start-scale));
+    filter: blur(var(--icon-swap-blur));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+.t-check-pop {
+  animation: t-check-pop var(--icon-swap-dur) var(--badge-pop-ease) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-check-pop {
+    animation: none !important;
+  }
+}
+
+/* --- Success check (transitions.dev 10) — earned "done" moment --- */
+.t-success-check {
+  display: inline-block;
+  transform-origin: center;
+  opacity: 0;
+  will-change: transform, opacity, filter;
+}
+.t-success-check svg {
+  display: block;
+  overflow: visible;
+}
+.t-success-check svg path {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+}
+.t-success-check[data-state="in"] {
+  animation:
+    t-check-fade var(--check-opacity-dur) var(--check-ease-opacity) forwards,
+    t-check-rotate var(--check-rotate-dur) var(--check-ease-rotate) forwards,
+    t-check-blur var(--check-blur-dur) var(--check-ease-out) forwards,
+    t-check-bob var(--check-bob-dur) var(--check-ease-bob) forwards;
+}
+.t-success-check[data-state="in"] svg path {
+  animation: t-check-draw var(--check-path-dur) var(--check-ease-path)
+    var(--check-path-delay, 0ms) forwards;
+}
+@keyframes t-check-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes t-check-rotate {
+  from {
+    transform: rotate(var(--check-rotate-from));
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+@keyframes t-check-blur {
+  from {
+    filter: blur(var(--check-blur-from));
+  }
+  to {
+    filter: blur(0);
+  }
+}
+@keyframes t-check-bob {
+  from {
+    translate: 0 var(--check-y-amount);
+  }
+  to {
+    translate: 0 0;
+  }
+}
+@keyframes t-check-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-success-check {
+    animation: none !important;
+    opacity: 1;
+  }
+  .t-success-check svg path {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}

@@ -1,0 +1,106 @@
+// Ribbon data model — see roadmap.md
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String    @id @default(auto()) @map("_id") @db.ObjectId
+  email                String    @unique
+  name                 String?
+  passwordHash         String
+  mustChangePassword   Boolean   @default(false)
+  theme                String    @default("modern-minimal")
+  motion               String    @default("smooth")
+  locale               String    @default("ru")
+  avatar               String? // preset avatar key (see src/lib/avatars.ts)
+  notificationsEnabled Boolean   @default(true)
+  roleIds              String[]  @db.ObjectId
+  roles                Role[]    @relation(fields: [roleIds], references: [id])
+  sessions             Session[]
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model Role {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique
+  description String?
+  permissions String[]
+  // Role ids this role inherits from (transitive union of permissions).
+  parentIds   String[] @db.ObjectId
+  isSystem    Boolean  @default(false)
+  userIds     String[] @db.ObjectId
+  users       User[]   @relation(fields: [userIds], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Session {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  tokenHash String   @unique
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ip        String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  action     String
+  actorId    String?  @db.ObjectId
+  actorEmail String?
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+}
+
+// --- OAuth2 provider (Ribbon as an authorization server) ---
+
+model OAuthClient {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  clientId     String   @unique
+  secretHash   String? // null for public (PKCE-only) clients
+  name         String
+  redirectUris String[]
+  scopes       String[] @default(["openid", "profile", "email"])
+  isPublic     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model OAuthAuthCode {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  codeHash            String   @unique
+  clientId            String
+  userId              String   @db.ObjectId
+  redirectUri         String
+  scope               String
+  codeChallenge       String?
+  codeChallengeMethod String?
+  expiresAt           DateTime
+  createdAt           DateTime @default(now())
+}
+
+model OAuthToken {
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  accessTokenHash  String    @unique
+  refreshTokenHash String?   @unique
+  clientId         String
+  userId           String    @db.ObjectId
+  scope            String
+  expiresAt        DateTime
+  refreshExpiresAt DateTime?
+  createdAt        DateTime  @default(now())
+}
