@@ -11,21 +11,11 @@ import (
 	"g3/internal/store"
 )
 
-// ServeHTTP authenticates the request (SigV4) and dispatches the S3 operation.
+// ServeHTTP authenticates the request (SigV4, header or presigned query) and
+// dispatches the S3 operation.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	cred, err := parseAuthorization(r.Header.Get("Authorization"))
-	if err != nil {
-		writeS3Error(w, http.StatusForbidden, "AccessDenied", "Missing or malformed Authorization header", r.URL.Path)
-		return
-	}
-	enc, err := s.store.AccessKeySecret(cred.accessKeyID)
-	if err != nil {
-		writeS3Error(w, http.StatusForbidden, "InvalidAccessKeyId", "Unknown access key", r.URL.Path)
-		return
-	}
-	secret, err := s.cipher.Decrypt(enc)
-	if err != nil || !verifyV4(r, cred, secret) {
-		writeS3Error(w, http.StatusForbidden, "SignatureDoesNotMatch", "Signature mismatch", r.URL.Path)
+	cred, ok := s.authenticate(w, r)
+	if !ok {
 		return
 	}
 	s.store.TouchAccessKey(cred.accessKeyID)
@@ -43,6 +33,52 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		s.objectOp(w, r, bucketName, key)
 	}
+}
+
+// authenticate verifies SigV4 via the Authorization header or, failing that, a
+// presigned query string. On failure it writes the S3 error and returns false.
+func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) (*credential, bool) {
+	presigned := false
+	cred, err := parseAuthorization(r.Header.Get("Authorization"))
+	if err != nil {
+		var pok bool
+		cred, pok = parsePresignedQuery(r.URL.Query())
+		if !pok {
+			writeS3Error(w, http.StatusForbidden, "AccessDenied", "Missing SigV4 credentials", r.URL.Path)
+			return nil, false
+		}
+		presigned = true
+	}
+
+	enc, err := s.store.AccessKeySecret(cred.accessKeyID)
+	if err != nil {
+		writeS3Error(w, http.StatusForbidden, "InvalidAccessKeyId", "Unknown access key", r.URL.Path)
+		return nil, false
+	}
+	secret, err := s.cipher.Decrypt(enc)
+	if err != nil {
+		writeS3Error(w, http.StatusForbidden, "SignatureDoesNotMatch", "Signature mismatch", r.URL.Path)
+		return nil, false
+	}
+
+	if presigned {
+		valid, expired := verifyPresigned(r, cred, secret)
+		if expired {
+			writeS3Error(w, http.StatusForbidden, "AccessDenied", "Request has expired", r.URL.Path)
+			return nil, false
+		}
+		if !valid {
+			writeS3Error(w, http.StatusForbidden, "SignatureDoesNotMatch", "Signature mismatch", r.URL.Path)
+			return nil, false
+		}
+		return cred, true
+	}
+
+	if !verifyV4(r, cred, secret) {
+		writeS3Error(w, http.StatusForbidden, "SignatureDoesNotMatch", "Signature mismatch", r.URL.Path)
+		return nil, false
+	}
+	return cred, true
 }
 
 func splitPath(p string) (bucket, key string) {
