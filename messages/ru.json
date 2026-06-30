@@ -356,5 +356,13 @@
     "endpoint": "S3-эндпоинт",
     "endpointDescription": "Укажите этот URL в вашем S3-клиенте.",
     "pathStyle": "Используйте path-style адресацию."
+  },
+  "dashboard": {
+    "buckets": "Бакеты",
+    "objects": "Объекты",
+    "stored": "Хранится",
+    "accounts": "Аккаунты",
+    "poolUsage": "Использование пула Drive",
+    "of": "из"
   }
 }

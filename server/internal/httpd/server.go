@@ -69,6 +69,7 @@ func New(cfg config.Config, st *store.Store, cipher *crypto.Cipher, driveMgr *dr
 	mux.HandleFunc("DELETE /api/keys/{id}", a.deleteKey)
 	mux.HandleFunc("GET /api/settings/balancing", a.getBalancing)
 	mux.HandleFunc("PUT /api/settings/balancing", a.setBalancing)
+	mux.HandleFunc("GET /api/stats", a.getStats)
 
 	// Account (self-service).
 	mux.HandleFunc("GET /api/account/sessions", a.listSessions)

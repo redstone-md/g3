@@ -56,6 +56,7 @@ func (s *Server) UploadPart(ctx context.Context, mu *store.MultipartUpload, part
 	if err := s.store.PutPart(mu.UploadID, partNumber, acc.ID, fileID, counter.n, etag); err != nil {
 		return "", err
 	}
+	s.store.AddDailyUsage(acc.ID, counter.n, todayUTC())
 	return etag, nil
 }
 

@@ -39,11 +39,19 @@ func (m *Manager) Download(ctx context.Context, refreshToken, fileID, rangeHeade
 	if err != nil {
 		return nil, err
 	}
-	call := svc.Files.Get(fileID).Context(ctx)
-	if rangeHeader != "" {
-		call.Header().Set("Range", rangeHeader)
-	}
-	resp, err := call.Download()
+	var resp *http.Response
+	err = retry(ctx, func() error {
+		call := svc.Files.Get(fileID).Context(ctx)
+		if rangeHeader != "" {
+			call.Header().Set("Range", rangeHeader)
+		}
+		r, e := call.Download()
+		if e != nil {
+			return e
+		}
+		resp = r
+		return nil
+	})
 	if err != nil {
 		return nil, fmt.Errorf("drive download: %w", err)
 	}
@@ -56,10 +64,14 @@ func (m *Manager) Delete(ctx context.Context, refreshToken, fileID string) error
 	if err != nil {
 		return err
 	}
-	if err := svc.Files.Delete(fileID).Context(ctx).Do(); err != nil {
-		if gerr, ok := err.(*googleapi.Error); ok && gerr.Code == http.StatusNotFound {
+	err = retry(ctx, func() error {
+		derr := svc.Files.Delete(fileID).Context(ctx).Do()
+		if gerr, ok := derr.(*googleapi.Error); ok && gerr.Code == http.StatusNotFound {
 			return nil
 		}
+		return derr
+	})
+	if err != nil {
 		return fmt.Errorf("drive delete: %w", err)
 	}
 	return nil

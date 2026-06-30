@@ -154,6 +154,20 @@ func (a *api) deleteKey(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"id": id})
 }
 
+// --- dashboard stats ---
+
+func (a *api) getStats(w http.ResponseWriter, r *http.Request) {
+	if a.authorize(w, r, "storage.read") == nil {
+		return
+	}
+	st, err := a.store.Stats()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not load stats")
+		return
+	}
+	writeJSON(w, http.StatusOK, st)
+}
+
 // --- balancing strategy ---
 
 var validStrategies = map[string]bool{

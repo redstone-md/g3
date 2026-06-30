@@ -69,7 +69,7 @@ func (m *Manager) Probe(ctx context.Context, tok *oauth2.Token) (*AccountInfo, e
 	if err != nil {
 		return nil, err
 	}
-	return aboutAndFolder(svc)
+	return aboutAndFolder(ctx, svc)
 }
 
 // RefreshInfo re-reads quota for an already-linked account using its stored
@@ -79,7 +79,7 @@ func (m *Manager) RefreshInfo(ctx context.Context, refreshToken string) (*Accoun
 	if err != nil {
 		return nil, err
 	}
-	return aboutAndFolder(svc)
+	return aboutAndFolder(ctx, svc)
 }
 
 // Service builds a Drive client for a linked account from its refresh token.
@@ -88,12 +88,20 @@ func (m *Manager) Service(ctx context.Context, refreshToken string) (*drive.Serv
 	return drive.NewService(ctx, option.WithTokenSource(m.oauth.TokenSource(ctx, tok)))
 }
 
-func aboutAndFolder(svc *drive.Service) (*AccountInfo, error) {
-	about, err := svc.About.Get().Fields("user,storageQuota").Do()
+func aboutAndFolder(ctx context.Context, svc *drive.Service) (*AccountInfo, error) {
+	var about *drive.About
+	err := retry(ctx, func() error {
+		a, e := svc.About.Get().Fields("user,storageQuota").Context(ctx).Do()
+		if e != nil {
+			return e
+		}
+		about = a
+		return nil
+	})
 	if err != nil {
 		return nil, fmt.Errorf("about.get: %w", err)
 	}
-	folderID, err := ensureFolder(svc)
+	folderID, err := ensureFolder(ctx, svc)
 	if err != nil {
 		return nil, fmt.Errorf("ensure folder: %w", err)
 	}
@@ -110,22 +118,36 @@ func aboutAndFolder(svc *drive.Service) (*AccountInfo, error) {
 
 // ensureFolder finds or creates the dedicated G3 folder (app-scoped via
 // drive.file, so List only sees files this app created).
-func ensureFolder(svc *drive.Service) (string, error) {
+func ensureFolder(ctx context.Context, svc *drive.Service) (string, error) {
 	q := fmt.Sprintf(
 		"name = '%s' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
 		folderName)
-	list, err := svc.Files.List().Q(q).Fields("files(id,name)").Do()
-	if err != nil {
+	var list *drive.FileList
+	if err := retry(ctx, func() error {
+		l, e := svc.Files.List().Q(q).Fields("files(id,name)").Context(ctx).Do()
+		if e != nil {
+			return e
+		}
+		list = l
+		return nil
+	}); err != nil {
 		return "", err
 	}
 	if len(list.Files) > 0 {
 		return list.Files[0].Id, nil
 	}
-	created, err := svc.Files.Create(&drive.File{
-		Name:     folderName,
-		MimeType: "application/vnd.google-apps.folder",
-	}).Fields("id").Do()
-	if err != nil {
+	var created *drive.File
+	if err := retry(ctx, func() error {
+		f, e := svc.Files.Create(&drive.File{
+			Name:     folderName,
+			MimeType: "application/vnd.google-apps.folder",
+		}).Fields("id").Context(ctx).Do()
+		if e != nil {
+			return e
+		}
+		created = f
+		return nil
+	}); err != nil {
 		return "", err
 	}
 	return created.Id, nil

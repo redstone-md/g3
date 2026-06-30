@@ -17,17 +17,22 @@ type DriveAccount struct {
 	FolderID     sql.NullString `json:"-"`
 	StorageLimit int64          `json:"storageLimit"`
 	StorageUsage int64          `json:"storageUsage"`
+	DailyDate    sql.NullString `json:"-"`
+	DailyBytes   int64          `json:"-"`
 	LastSyncAt   sql.NullString `json:"-"`
 	CreatedAt    string         `json:"createdAt"`
 	// RefreshToken is only populated by internal lookups, never serialized.
 	RefreshToken string `json:"-"`
 }
 
+// DailyUploadLimit is Google Drive's per-account daily upload cap (750 GB).
+const DailyUploadLimit int64 = 750 * 1024 * 1024 * 1024
+
 // ListDriveAccounts returns all linked accounts (newest first).
 func (s *Store) ListDriveAccounts() ([]DriveAccount, error) {
 	rows, err := s.DB.Query(
 		`SELECT id, email, status, weight, folder_id, storage_limit, storage_usage,
-		        last_sync_at, created_at
+		        daily_date, daily_bytes, last_sync_at, created_at
 		 FROM drive_accounts ORDER BY created_at DESC`)
 	if err != nil {
 		return nil, err
@@ -38,7 +43,8 @@ func (s *Store) ListDriveAccounts() ([]DriveAccount, error) {
 	for rows.Next() {
 		var a DriveAccount
 		if err := rows.Scan(&a.ID, &a.Email, &a.Status, &a.Weight, &a.FolderID,
-			&a.StorageLimit, &a.StorageUsage, &a.LastSyncAt, &a.CreatedAt); err != nil {
+			&a.StorageLimit, &a.StorageUsage, &a.DailyDate, &a.DailyBytes,
+			&a.LastSyncAt, &a.CreatedAt); err != nil {
 			return nil, err
 		}
 		items = append(items, a)
@@ -51,10 +57,10 @@ func (s *Store) DriveAccountByEmail(email string) (*DriveAccount, error) {
 	var a DriveAccount
 	err := s.DB.QueryRow(
 		`SELECT id, email, status, weight, folder_id, storage_limit, storage_usage,
-		        last_sync_at, created_at, refresh_token
+		        daily_date, daily_bytes, last_sync_at, created_at, refresh_token
 		 FROM drive_accounts WHERE email = ?`, email,
 	).Scan(&a.ID, &a.Email, &a.Status, &a.Weight, &a.FolderID, &a.StorageLimit,
-		&a.StorageUsage, &a.LastSyncAt, &a.CreatedAt, &a.RefreshToken)
+		&a.StorageUsage, &a.DailyDate, &a.DailyBytes, &a.LastSyncAt, &a.CreatedAt, &a.RefreshToken)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -118,10 +124,10 @@ func (s *Store) DriveAccountByID(id string) (*DriveAccount, error) {
 	var a DriveAccount
 	err := s.DB.QueryRow(
 		`SELECT id, email, status, weight, folder_id, storage_limit, storage_usage,
-		        last_sync_at, created_at, refresh_token
+		        daily_date, daily_bytes, last_sync_at, created_at, refresh_token
 		 FROM drive_accounts WHERE id = ?`, id,
 	).Scan(&a.ID, &a.Email, &a.Status, &a.Weight, &a.FolderID, &a.StorageLimit,
-		&a.StorageUsage, &a.LastSyncAt, &a.CreatedAt, &a.RefreshToken)
+		&a.StorageUsage, &a.DailyDate, &a.DailyBytes, &a.LastSyncAt, &a.CreatedAt, &a.RefreshToken)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -129,4 +135,16 @@ func (s *Store) DriveAccountByID(id string) (*DriveAccount, error) {
 		return nil, err
 	}
 	return &a, nil
+}
+
+// AddDailyUsage records uploaded bytes against an account's daily counter
+// (resetting when the day rolls over) and bumps its optimistic storage usage.
+func (s *Store) AddDailyUsage(accountID string, bytes int64, today string) {
+	_, _ = s.DB.Exec(
+		`UPDATE drive_accounts SET
+		   daily_bytes = CASE WHEN daily_date = ? THEN daily_bytes + ? ELSE ? END,
+		   daily_date = ?,
+		   storage_usage = storage_usage + ?
+		 WHERE id = ?`,
+		today, bytes, bytes, today, bytes, accountID)
 }

@@ -9,7 +9,8 @@ describe("permissions catalog", () => {
   it("includes core keys", () => {
     expect(ALL_PERMISSIONS).toContain("users.read");
     expect(ALL_PERMISSIONS).toContain("roles.update");
-    expect(ALL_PERMISSIONS).toContain("oauth.read");
+    expect(ALL_PERMISSIONS).toContain("accounts.read");
+    expect(ALL_PERMISSIONS).toContain("storage.write");
     expect(ALL_PERMISSIONS).toContain("audit.read");
   });
 

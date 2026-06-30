@@ -356,5 +356,13 @@
     "endpoint": "S3 endpoint",
     "endpointDescription": "Point your S3 client at this URL.",
     "pathStyle": "Use path-style addressing."
+  },
+  "dashboard": {
+    "buckets": "Buckets",
+    "objects": "Objects",
+    "stored": "Stored",
+    "accounts": "Accounts",
+    "poolUsage": "Drive pool usage",
+    "of": "of"
   }
 }

@@ -89,6 +89,8 @@ CREATE TABLE IF NOT EXISTS drive_accounts (
   folder_id TEXT,
   storage_limit INTEGER NOT NULL DEFAULT 0,
   storage_usage INTEGER NOT NULL DEFAULT 0,
+  daily_date TEXT,
+  daily_bytes INTEGER NOT NULL DEFAULT 0,
   last_sync_at TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -171,6 +173,13 @@ func Open(dataDir, adminEmail, adminPassword string) (*Store, error) {
 	db.SetMaxOpenConns(1) // modernc sqlite: serialize writes to avoid SQLITE_BUSY
 	if _, err := db.Exec(schema); err != nil {
 		return nil, fmt.Errorf("apply schema: %w", err)
+	}
+	// Best-effort migrations for databases created before a column existed.
+	for _, alter := range []string{
+		`ALTER TABLE drive_accounts ADD COLUMN daily_date TEXT`,
+		`ALTER TABLE drive_accounts ADD COLUMN daily_bytes INTEGER NOT NULL DEFAULT 0`,
+	} {
+		_, _ = db.Exec(alter) // ignore "duplicate column" on already-migrated DBs
 	}
 
 	s := &Store{DB: db}
