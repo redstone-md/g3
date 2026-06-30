@@ -383,6 +383,9 @@
     "policyDescription": "Optional JSON access policy for this bucket.",
     "policyPlaceholder": "{\"Version\":\"2012-10-17\",\"Statement\":[]}",
     "savePolicy": "Save policy",
-    "policySaved": "Policy saved."
+    "policySaved": "Policy saved.",
+    "uploads": "Uploads",
+    "uploadDone": "Done",
+    "cancelUpload": "Cancel"
   }
 }

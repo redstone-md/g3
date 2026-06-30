@@ -383,6 +383,9 @@
     "policyDescription": "Необязательная JSON-политика доступа для бакета.",
     "policyPlaceholder": "{\"Version\":\"2012-10-17\",\"Statement\":[]}",
     "savePolicy": "Сохранить политику",
-    "policySaved": "Политика сохранена."
+    "policySaved": "Политика сохранена.",
+    "uploads": "Загрузки",
+    "uploadDone": "Готово",
+    "cancelUpload": "Отмена"
   }
 }

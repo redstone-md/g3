@@ -73,6 +73,11 @@ func New(cfg config.Config, st *store.Store, cipher *crypto.Cipher, driveMgr *dr
 	mux.HandleFunc("DELETE /api/buckets/{id}/object", a.deleteObjectPanel)
 	mux.HandleFunc("GET /api/buckets/{id}/policy", a.getBucketPolicy)
 	mux.HandleFunc("PUT /api/buckets/{id}/policy", a.setBucketPolicy)
+	// Multipart upload (parallel parts from the browser).
+	mux.HandleFunc("POST /api/buckets/{id}/uploads", a.initiateUpload)
+	mux.HandleFunc("PUT /api/buckets/{id}/uploads", a.uploadPart)
+	mux.HandleFunc("POST /api/buckets/{id}/uploads/complete", a.completeUpload)
+	mux.HandleFunc("DELETE /api/buckets/{id}/uploads", a.abortUpload)
 	mux.HandleFunc("GET /api/keys", a.listKeys)
 	mux.HandleFunc("POST /api/keys", a.createKey)
 	mux.HandleFunc("DELETE /api/keys/{id}", a.deleteKey)

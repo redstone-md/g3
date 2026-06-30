@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 
 	"g3/internal/store"
@@ -148,6 +149,90 @@ func (a *api) deleteObjectPanel(w http.ResponseWriter, r *http.Request) {
 	}
 	a.store.LogAuditFull("object.delete", actor.ID, actor.Email, "object", b.Name+"/"+key, clientIP(r))
 	writeJSON(w, http.StatusOK, map[string]string{"key": key})
+}
+
+// --- multipart upload (panel; browser slices the file and uploads parts in
+// parallel, so each request is small enough for any proxy and shows progress) ---
+
+func (a *api) initiateUpload(w http.ResponseWriter, r *http.Request) {
+	if a.authorize(w, r, "storage.write") == nil {
+		return
+	}
+	b := a.bucketFromPath(w, r)
+	if b == nil {
+		return
+	}
+	key := r.URL.Query().Get("key")
+	if key == "" {
+		writeError(w, http.StatusBadRequest, "missing key")
+		return
+	}
+	ct := r.URL.Query().Get("contentType")
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
+	uploadID, err := a.engine.InitiateMultipart(b, key, ct)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not start upload")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"uploadId": uploadID})
+}
+
+func (a *api) uploadPart(w http.ResponseWriter, r *http.Request) {
+	if a.authorize(w, r, "storage.write") == nil {
+		return
+	}
+	mu, err := a.store.MultipartByID(r.URL.Query().Get("uploadId"))
+	if err != nil {
+		writeError(w, http.StatusNotFound, "upload not found")
+		return
+	}
+	part, _ := strconv.Atoi(r.URL.Query().Get("partNumber"))
+	if part < 1 {
+		writeError(w, http.StatusBadRequest, "bad partNumber")
+		return
+	}
+	etag, err := a.engine.UploadPart(r.Context(), mu, part, r.Body)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"partNumber": part, "etag": etag})
+}
+
+func (a *api) completeUpload(w http.ResponseWriter, r *http.Request) {
+	actor := a.authorize(w, r, "storage.write")
+	if actor == nil {
+		return
+	}
+	b := a.bucketFromPath(w, r)
+	if b == nil {
+		return
+	}
+	mu, err := a.store.MultipartByID(r.URL.Query().Get("uploadId"))
+	if err != nil {
+		writeError(w, http.StatusNotFound, "upload not found")
+		return
+	}
+	etag, _, err := a.engine.CompleteMultipart(r.Context(), b, mu)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	a.store.LogAuditFull("object.upload", actor.ID, actor.Email, "object", b.Name+"/"+mu.Key, clientIP(r))
+	writeJSON(w, http.StatusOK, map[string]string{"etag": etag, "key": mu.Key})
+}
+
+func (a *api) abortUpload(w http.ResponseWriter, r *http.Request) {
+	if a.authorize(w, r, "storage.write") == nil {
+		return
+	}
+	mu, err := a.store.MultipartByID(r.URL.Query().Get("uploadId"))
+	if err == nil {
+		_ = a.engine.AbortMultipart(r.Context(), mu)
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
 // --- bucket policy (panel) ---

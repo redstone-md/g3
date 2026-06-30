@@ -2,6 +2,8 @@
 
 import {
   ArrowLeft01Icon,
+  Cancel01Icon,
+  CheckmarkCircle02Icon,
   Delete02Icon,
   Download01Icon,
   Folder01Icon,
@@ -9,6 +11,7 @@ import {
   Upload01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
@@ -47,8 +50,9 @@ import {
   useDeleteObject,
   useObjects,
   useSetBucketPolicy,
-  useUploadObject,
 } from "@/hooks/use-objects";
+import { type UploadHandle, uploadFile } from "@/lib/upload";
+import { cn } from "@/lib/utils";
 
 const dateFmt = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
@@ -60,6 +64,22 @@ function formatBytes(n: number): string {
   const u = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.min(u.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
   return `${(n / 1024 ** i).toFixed(i ? 1 : 0)} ${u[i]}`;
+}
+
+function formatSpeed(bytesPerSec: number): string {
+  if (!bytesPerSec || bytesPerSec < 1) return "…";
+  return `${formatBytes(bytesPerSec)}/s`;
+}
+
+interface UploadTask {
+  id: string;
+  name: string;
+  total: number;
+  loaded: number;
+  speed: number;
+  status: "uploading" | "done" | "error";
+  error?: string;
+  handle: UploadHandle;
 }
 
 export function ObjectsView({
@@ -74,10 +94,12 @@ export function ObjectsView({
   const router = useRouter();
   const [prefix, setPrefix] = useState("");
   const { data, isLoading, error } = useObjects(bucketId, prefix);
-  const upload = useUploadObject(bucketId, prefix);
+  const qc = useQueryClient();
   const remove = useDeleteObject(bucketId);
   const fileInput = useRef<HTMLInputElement>(null);
   const [toDelete, setToDelete] = useState<ObjectEntry | null>(null);
+  const [uploads, setUploads] = useState<UploadTask[]>([]);
+  const speedRef = useRef<Record<string, { t: number; b: number }>>({});
 
   const canWrite = permissions.includes("storage.write");
   const segments = prefix.split("/").filter(Boolean);
@@ -86,10 +108,70 @@ export function ObjectsView({
     setPrefix(depth === 0 ? "" : `${segments.slice(0, depth).join("/")}/`);
   }
 
-  async function onFiles(files: FileList | null) {
+  function patch(id: string, fn: (u: UploadTask) => UploadTask) {
+    setUploads((prev) => prev.map((u) => (u.id === id ? fn(u) : u)));
+  }
+
+  function onProgress(id: string, loaded: number) {
+    const now = Date.now();
+    const meta = speedRef.current[id] ?? { t: now, b: 0 };
+    const dt = now - meta.t;
+    patch(id, (u) => {
+      let speed = u.speed;
+      if (dt > 300) {
+        const inst = ((loaded - meta.b) / dt) * 1000; // bytes/s
+        speed = u.speed ? u.speed * 0.6 + inst * 0.4 : inst;
+        speedRef.current[id] = { t: now, b: loaded };
+      }
+      return { ...u, loaded, speed };
+    });
+  }
+
+  function onFiles(files: FileList | null) {
     if (!files) return;
     for (const file of Array.from(files)) {
-      await upload.mutateAsync(file).catch(() => {});
+      const id = `${file.name}-${file.size}-${Math.random().toString(36).slice(2)}`;
+      const objectKey = prefix + file.name;
+      speedRef.current[id] = { t: Date.now(), b: 0 };
+      const handle = uploadFile({
+        bucketId,
+        key: objectKey,
+        file,
+        onProgress: (loaded) => onProgress(id, loaded),
+      });
+      setUploads((prev) => [
+        ...prev,
+        {
+          id,
+          name: file.name,
+          total: file.size,
+          loaded: 0,
+          speed: 0,
+          status: "uploading",
+          handle,
+        },
+      ]);
+      handle.promise.then(
+        () => {
+          patch(id, (u) => ({ ...u, status: "done", loaded: u.total, speed: 0 }));
+          qc.invalidateQueries({ queryKey: ["objects", bucketId] });
+          window.setTimeout(
+            () => setUploads((prev) => prev.filter((u) => u.id !== id)),
+            4000,
+          );
+        },
+        (err: unknown) => {
+          if (err instanceof DOMException && err.name === "AbortError") {
+            setUploads((prev) => prev.filter((u) => u.id !== id));
+            return;
+          }
+          patch(id, (u) => ({
+            ...u,
+            status: "error",
+            error: err instanceof Error ? err.message : String(err),
+          }));
+        },
+      );
     }
     if (fileInput.current) fileInput.current.value = "";
   }
@@ -105,9 +187,9 @@ export function ObjectsView({
           {t("backToBuckets")}
         </Button>
         {canWrite ? (
-          <Button onClick={() => fileInput.current?.click()} disabled={upload.isPending}>
+          <Button onClick={() => fileInput.current?.click()}>
             <HugeiconsIcon icon={Upload01Icon} />
-            {upload.isPending ? t("uploading") : t("upload")}
+            {t("upload")}
           </Button>
         ) : null}
         <input
@@ -118,6 +200,10 @@ export function ObjectsView({
           onChange={(e) => onFiles(e.target.files)}
         />
       </PageHeader>
+
+      {uploads.length > 0 ? (
+        <UploadsPanel uploads={uploads} />
+      ) : null}
 
       {/* Breadcrumb */}
       <div className="mb-4 flex flex-wrap items-center gap-1 text-sm">
@@ -272,6 +358,66 @@ export function ObjectsView({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function UploadsPanel({ uploads }: { uploads: UploadTask[] }) {
+  const t = useTranslations("objects");
+  return (
+    <Card className="mb-4">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">{t("uploads")}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {uploads.map((u) => {
+          const pct = u.total
+            ? Math.min(100, Math.round((u.loaded / u.total) * 100))
+            : 0;
+          return (
+            <div key={u.id} className="space-y-1.5">
+              <div className="flex items-center gap-2 text-sm">
+                {u.status === "done" ? (
+                  <HugeiconsIcon
+                    icon={CheckmarkCircle02Icon}
+                    className="size-4 shrink-0 text-primary"
+                  />
+                ) : null}
+                <span className="truncate font-medium">{u.name}</span>
+                <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                  {u.status === "error" ? (
+                    <span className="text-destructive">{u.error}</span>
+                  ) : u.status === "done" ? (
+                    t("uploadDone")
+                  ) : (
+                    `${formatBytes(u.loaded)} / ${formatBytes(u.total)} · ${formatSpeed(u.speed)} · ${pct}%`
+                  )}
+                </span>
+                {u.status === "uploading" ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-6 shrink-0"
+                    onClick={() => u.handle.abort()}
+                    aria-label={t("cancelUpload")}
+                  >
+                    <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" />
+                  </Button>
+                ) : null}
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-[width] duration-200",
+                    u.status === "error" ? "bg-destructive" : "bg-primary",
+                  )}
+                  style={{ width: `${u.status === "done" ? 100 : pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
   );
 }
 
