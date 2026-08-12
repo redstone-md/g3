@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"g3/internal/store"
 )
@@ -307,7 +308,8 @@ func (s *Server) getObject(w http.ResponseWriter, r *http.Request, b *store.Buck
 	}
 	w.Header().Set("ETag", quote(o.ETag))
 	w.Header().Set("Content-Type", o.ContentType)
-	w.Header().Set("Last-Modified", o.UpdatedAt)
+	t, _ := time.Parse(time.RFC3339, o.UpdatedAt)
+	w.Header().Set("Last-Modified", t.UTC().Format(http.TimeFormat))
 	w.Header().Set("Accept-Ranges", "bytes")
 
 	if !withBody { // HEAD
