@@ -18,15 +18,9 @@ jobs:
 
       - run: npm ci
 
-      # Prisma client is generated to src/generated and is git-ignored.
-      - run: npm run db:generate
-
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm test
 
-      # Build does not connect to the database (dynamic pages render on demand),
-      # but the Prisma config needs a value to load.
+      # Static export — no database connection at build time.
       - run: npm run build
-        env:
-          DATABASE_URL: "mongodb://localhost:27017/ribbon"
