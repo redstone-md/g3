@@ -34,15 +34,27 @@ type xmlObject struct {
 	StorageClass string `xml:"StorageClass"`
 }
 
+// listBucketResult serves both ListObjects (v1: Marker/NextMarker) and
+// ListObjectsV2 (ContinuationToken/NextContinuationToken); the fields the
+// requested version does not use stay empty and are omitted.
 type listBucketResult struct {
-	XMLName               xml.Name    `xml:"ListBucketResult"`
-	Name                  string      `xml:"Name"`
-	Prefix                string      `xml:"Prefix"`
-	KeyCount              int         `xml:"KeyCount"`
-	MaxKeys               int         `xml:"MaxKeys"`
-	IsTruncated           bool        `xml:"IsTruncated"`
-	NextContinuationToken string      `xml:"NextContinuationToken,omitempty"`
-	Contents              []xmlObject `xml:"Contents"`
+	XMLName               xml.Name      `xml:"ListBucketResult"`
+	Name                  string        `xml:"Name"`
+	Prefix                string        `xml:"Prefix"`
+	Delimiter             string        `xml:"Delimiter,omitempty"`
+	Marker                string        `xml:"Marker,omitempty"`
+	NextMarker            string        `xml:"NextMarker,omitempty"`
+	KeyCount              int           `xml:"KeyCount"`
+	MaxKeys               int           `xml:"MaxKeys"`
+	IsTruncated           bool          `xml:"IsTruncated"`
+	NextContinuationToken string        `xml:"NextContinuationToken,omitempty"`
+	Contents              []xmlObject   `xml:"Contents"`
+	CommonPrefixes        []xmlPrefixes `xml:"CommonPrefixes"`
+}
+
+// xmlPrefixes is one "directory" rolled up by a delimiter.
+type xmlPrefixes struct {
+	Prefix string `xml:"Prefix"`
 }
 
 type initiateMultipartResult struct {

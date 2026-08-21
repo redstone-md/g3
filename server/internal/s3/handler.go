@@ -176,38 +176,38 @@ func (s *Server) listObjects(w http.ResponseWriter, r *http.Request, name string
 		writeS3Error(w, http.StatusNotFound, "NoSuchBucket", "", name)
 		return
 	}
-	q := r.URL.Query()
-	prefix := q.Get("prefix")
-	maxKeys := 1000
-	if v, err := strconv.Atoi(q.Get("max-keys")); err == nil && v > 0 && v < 1000 {
-		maxKeys = v
-	}
-	after := q.Get("start-after")
-	if tok := q.Get("continuation-token"); tok != "" {
-		after = tok
-	}
-
-	rows, err := s.store.ListObjects(b.ID, prefix, after, maxKeys+1)
+	req := parseListRequest(r.URL.Query())
+	page, err := buildListing(s.store.ListObjects, b.ID, req)
 	if err != nil {
 		writeS3Error(w, http.StatusInternalServerError, "InternalError", err.Error(), name)
 		return
 	}
-	truncated := len(rows) > maxKeys
-	if truncated {
-		rows = rows[:maxKeys]
-	}
+
 	out := listBucketResult{
-		Name: name, Prefix: prefix, MaxKeys: maxKeys,
-		KeyCount: len(rows), IsTruncated: truncated,
+		Name: name, Prefix: req.Prefix, Delimiter: req.Delimiter,
+		MaxKeys: req.MaxKeys, IsTruncated: page.Truncated,
+		KeyCount: len(page.Objects) + len(page.CommonPrefixes),
 	}
-	for _, o := range rows {
+	for _, o := range page.Objects {
 		out.Contents = append(out.Contents, xmlObject{
 			Key: o.Key, LastModified: o.UpdatedAt, ETag: quote(o.ETag),
 			Size: o.Size, StorageClass: "STANDARD",
 		})
 	}
-	if truncated && len(rows) > 0 {
-		out.NextContinuationToken = rows[len(rows)-1].Key
+	for _, p := range page.CommonPrefixes {
+		out.CommonPrefixes = append(out.CommonPrefixes, xmlPrefixes{Prefix: p})
+	}
+	// Each protocol version resumes through its own field; answering in the
+	// wrong one leaves the client re-sending the same page forever.
+	if req.V2 {
+		if page.Truncated {
+			out.NextContinuationToken = page.NextMarker
+		}
+	} else {
+		out.Marker = req.After
+		if page.Truncated {
+			out.NextMarker = page.NextMarker
+		}
 	}
 	writeXML(w, http.StatusOK, out)
 }
