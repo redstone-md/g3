@@ -142,7 +142,12 @@ func referencedIDs(refs store.BackingRefs) map[string]struct{} {
 
 // sweepAccount walks one account's G3 folder and collects what is unreachable.
 func (s *Server) sweepAccount(ctx context.Context, acc store.DriveAccount, keep map[string]struct{}, apply bool, report *GCReport) error {
-	refresh, err := s.refreshFor(&acc)
+	// The listing omits refresh tokens; re-read the account to get one.
+	full, err := s.store.DriveAccountByID(acc.ID)
+	if err != nil {
+		return err
+	}
+	refresh, err := s.refreshFor(full)
 	if err != nil {
 		return err
 	}
