@@ -29,11 +29,9 @@ function readLocaleCookie(): Locale {
 export function IntlProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
 
+  // Run once on mount; React bails out when the cookie matches the default.
   useEffect(() => {
-    const cookieLocale = readLocaleCookie();
-    if (cookieLocale !== locale) setLocale(cookieLocale);
-    // Run once on mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setLocale(readLocaleCookie());
   }, []);
 
   return (

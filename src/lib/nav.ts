@@ -4,7 +4,7 @@ import {
   DashboardSquare01Icon,
   DatabaseIcon,
   Key01Icon,
-  PaintBrushIcon,
+  type PaintBrushIcon,
   ShieldUserIcon,
   UserMultipleIcon,
 } from "@hugeicons/core-free-icons";
