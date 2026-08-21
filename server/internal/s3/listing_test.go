@@ -116,3 +116,44 @@ func TestKeyAfterPrefixSkipsGroup(t *testing.T) {
 		t.Errorf("%q does not sort past docs/zzz.bin", got)
 	}
 }
+
+// Resuming a truncated delimiter listing must not hand the same directory back
+// twice: the panel keys its rows by folder name, and a repeat is a lost page.
+func TestBuildListingResumesPastDirectories(t *testing.T) {
+	lister, _ := fakeLister([]string{
+		"docs/a.txt", "docs/b.txt", "docs/c.txt",
+		"img/1.png", "img/2.png",
+		"notes/x.md",
+		"root.txt",
+	})
+
+	seen := []string{}
+	after := ""
+	for page := 0; page < 10; page++ {
+		p, err := buildListing(lister, "b", listRequest{Delimiter: "/", After: after, MaxKeys: 2})
+		if err != nil {
+			t.Fatal(err)
+		}
+		seen = append(seen, p.CommonPrefixes...)
+		for _, o := range p.Objects {
+			seen = append(seen, o.Key)
+		}
+		if !p.Truncated {
+			break
+		}
+		after = p.NextMarker
+	}
+
+	counts := map[string]int{}
+	for _, s := range seen {
+		counts[s]++
+	}
+	for entry, n := range counts {
+		if n > 1 {
+			t.Errorf("%q returned %d times across pages: %v", entry, n, seen)
+		}
+	}
+	if len(counts) != 4 { // docs/, img/, notes/, root.txt
+		t.Errorf("saw %d distinct entries (%v), want 4", len(counts), seen)
+	}
+}

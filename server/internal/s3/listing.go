@@ -93,7 +93,10 @@ func buildListing(list objectLister, bucketID string, req listRequest) (listPage
 			if !seenPrefix[group] {
 				seenPrefix[group] = true
 				page.CommonPrefixes = append(page.CommonPrefixes, group)
-				page.NextMarker = group
+				// Resume past the whole group. Marking the group itself would
+				// hand a resumed page the keys inside it, which roll up into
+				// the same directory and repeat it.
+				page.NextMarker = keyAfterPrefix(group)
 			}
 			// Resume past the whole directory rather than walking into it.
 			after = keyAfterPrefix(group)
