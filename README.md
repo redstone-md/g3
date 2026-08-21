@@ -25,8 +25,8 @@ storage across the pool.
 ## Features
 
 - **S3-compatible API** — buckets, objects, multipart upload, `ListObjectsV2`,
-  ranged `GetObject`, batch delete, and full **AWS Signature V4** (header *and*
-  presigned-URL auth).
+  ranged `GetObject`, `CopyObject` (server-side, incl. metadata-only rewrites),
+  batch delete, and full **AWS Signature V4** (header *and* presigned-URL auth).
 - **Google Drive as the backend** — link accounts via OAuth (offline refresh
   tokens, encrypted with AES-256-GCM). Object bytes live on Drive; only metadata
   is local.
@@ -39,6 +39,12 @@ storage across the pool.
   keys, users/roles (RBAC), audit log, themes, and i18n (EN/RU).
 - **Single binary** — Next.js panel exported to static HTML and embedded in the Go
   server. SQLite for metadata. No external database.
+- **Self-cleaning storage** — multipart uploads a client abandoned are swept
+  hourly. Files no object references any more (left behind by older versions)
+  are reclaimed by the collector: `POST /api/storage/gc` reports what it found,
+  `POST /api/storage/gc?apply=true` deletes it. The collector only ever touches
+  G3's own Drive folder, spares anything younger than two hours, and refuses to
+  run if the metadata's reference list comes back empty.
 
 ## How it works
 
