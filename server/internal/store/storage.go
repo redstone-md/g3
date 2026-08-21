@@ -155,6 +155,19 @@ func nullable(v string) any {
 	return v
 }
 
+// UpdateObjectMeta rewrites an object's content type and user metadata,
+// leaving its bytes and Drive backing untouched. This is the cheap half of
+// CopyObject: clients use a copy onto the same key to change a stored file's
+// recorded modification time.
+func (s *Store) UpdateObjectMeta(bucketID, key, contentType, metadata string) error {
+	_, err := s.DB.Exec(
+		`UPDATE objects SET content_type = ?, metadata = ?, updated_at = ?
+		 WHERE bucket_id = ? AND object_key = ?`,
+		contentType, nullable(metadata), time.Now().UTC().Format(time.RFC3339),
+		bucketID, key)
+	return err
+}
+
 func (s *Store) DeleteObject(bucketID, key string) error {
 	_, err := s.DB.Exec(`DELETE FROM objects WHERE bucket_id = ? AND object_key = ?`, bucketID, key)
 	return err

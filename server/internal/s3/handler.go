@@ -266,6 +266,11 @@ func (s *Server) objectOp(w http.ResponseWriter, r *http.Request, name, key stri
 
 	switch r.Method {
 	case http.MethodPut:
+		// A copy source turns the PUT into a server-side copy: no body follows.
+		if src := r.Header.Get("X-Amz-Copy-Source"); src != "" {
+			s.copyObject(w, r, b, key, src)
+			return
+		}
 		s.putObject(w, r, b, key)
 	case http.MethodGet:
 		s.getObject(w, r, b, key, true)

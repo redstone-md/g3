@@ -26,6 +26,13 @@ type xmlOwner struct {
 	DisplayName string `xml:"DisplayName"`
 }
 
+// copyObjectResult answers PUT with x-amz-copy-source.
+type copyObjectResult struct {
+	XMLName      xml.Name `xml:"CopyObjectResult"`
+	LastModified string   `xml:"LastModified"`
+	ETag         string   `xml:"ETag"`
+}
+
 type xmlObject struct {
 	Key          string `xml:"Key"`
 	LastModified string `xml:"LastModified"`
