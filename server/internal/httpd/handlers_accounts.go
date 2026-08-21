@@ -2,14 +2,30 @@ package httpd
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
 
 	"g3/internal/auth"
+	"g3/internal/store"
 )
 
 const oauthStateCookie = "g3_oauth_state"
+
+// accountDTO is a linked account plus the bytes G3 itself stores on it. The
+// Drive quota answers a different question — it counts the owner's unrelated
+// files too — so the panel shows both numbers side by side.
+type accountDTO struct {
+	store.DriveAccount
+	G3Usage int64 `json:"g3Usage"`
+}
+
+// quotaMaxAge is how stale a cached Drive quota may be before the listing
+// re-reads it. Without a refresh the panel keeps showing whatever was true
+// when the account was last touched, which after a burst of uploads and
+// deletes can be off by a hundred gigabytes.
+const quotaMaxAge = 15 * time.Minute
 
 func (a *api) listAccounts(w http.ResponseWriter, r *http.Request) {
 	if a.authorize(w, r, "accounts.read") == nil {
@@ -20,7 +36,58 @@ func (a *api) listAccounts(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "could not list accounts")
 		return
 	}
-	writeJSON(w, http.StatusOK, accounts)
+	usage, err := a.engine.UsageByAccount()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not measure usage")
+		return
+	}
+	out := make([]accountDTO, 0, len(accounts))
+	for _, acc := range accounts {
+		out = append(out, accountDTO{
+			DriveAccount: a.freshQuota(r.Context(), acc),
+			G3Usage:      usage[acc.ID],
+		})
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// freshQuota re-reads an account's Drive quota when the cached one has aged
+// out, returning the account either way: a Drive hiccup should not cost the
+// panel its listing.
+func (a *api) freshQuota(ctx context.Context, acc store.DriveAccount) store.DriveAccount {
+	if acc.Status != "connected" || !olderThan(acc.LastSyncAt, quotaMaxAge) {
+		return acc
+	}
+	full, err := a.store.DriveAccountByID(acc.ID)
+	if err != nil {
+		return acc
+	}
+	refresh, err := a.cipher.Decrypt(full.RefreshToken)
+	if err != nil {
+		return acc
+	}
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	info, err := a.drive.RefreshInfo(ctx, refresh)
+	if err != nil {
+		return acc
+	}
+	_ = a.store.UpdateDriveQuota(acc.ID, info.Limit, info.Usage, "connected")
+	acc.StorageLimit, acc.StorageUsage = info.Limit, info.Usage
+	return acc
+}
+
+// olderThan reports whether a stored RFC3339 timestamp is missing, unreadable,
+// or further in the past than max.
+func olderThan(ts sql.NullString, max time.Duration) bool {
+	if !ts.Valid {
+		return true
+	}
+	t, err := time.Parse(time.RFC3339, ts.String)
+	if err != nil {
+		return true
+	}
+	return time.Since(t) > max
 }
 
 // connectAccount starts the Google OAuth consent flow (browser redirect).

@@ -55,3 +55,36 @@ func (s *Store) scanStrings(query string, args ...any) ([]string, error) {
 	}
 	return out, rows.Err()
 }
+
+// UsageByAccount sums the bytes each account holds for objects backed by a
+// single Drive file, plus any parts staged by an upload in progress. Bytes of
+// multipart objects sit in their manifests and are added by the caller.
+func (s *Store) UsageByAccount() (map[string]int64, error) {
+	usage := map[string]int64{}
+	queries := []string{
+		`SELECT account_id, SUM(size) FROM objects
+		 WHERE account_id IS NOT NULL GROUP BY account_id`,
+		`SELECT account_id, SUM(size) FROM multipart_parts GROUP BY account_id`,
+	}
+	for _, q := range queries {
+		rows, err := s.DB.Query(q)
+		if err != nil {
+			return nil, err
+		}
+		for rows.Next() {
+			var id string
+			var sum int64
+			if err := rows.Scan(&id, &sum); err != nil {
+				rows.Close()
+				return nil, err
+			}
+			usage[id] += sum
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return usage, nil
+}

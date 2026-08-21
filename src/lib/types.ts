@@ -61,7 +61,10 @@ export interface AccountDTO {
   status: string;
   weight: number;
   storageLimit: number;
+  /** Bytes used across the whole Google account, G3's share included. */
   storageUsage: number;
+  /** Bytes G3 itself stores on this account. */
+  g3Usage: number;
   createdAt: string;
 }
 

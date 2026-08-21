@@ -215,7 +215,10 @@ function AccountRow({
             />
           </div>
           <span className="mt-1 block text-xs text-muted-foreground">
-            {formatBytes(acc.storageUsage)} /{" "}
+            {t("storedByG3")}: {formatBytes(acc.g3Usage)}
+          </span>
+          <span className="block text-xs text-muted-foreground">
+            {t("accountTotal")}: {formatBytes(acc.storageUsage)} /{" "}
             {acc.storageLimit > 0
               ? formatBytes(acc.storageLimit)
               : t("unlimited")}
