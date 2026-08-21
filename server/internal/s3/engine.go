@@ -8,7 +8,6 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -157,12 +156,12 @@ func (s *Server) PutObject(ctx context.Context, bucket *store.Bucket, key, conte
 		if _, err := br.Peek(1); err == io.EOF && len(manifest) > 0 {
 			break
 		} else if err != nil && err != io.EOF {
-			return "", err
+			return "", s.abandon(ctx, manifest, err)
 		}
 
 		acc, refresh, err := s.pickAccount(key)
 		if err != nil {
-			return "", err
+			return "", s.abandon(ctx, manifest, err)
 		}
 		folderID := ""
 		if acc.FolderID.Valid {
@@ -176,7 +175,7 @@ func (s *Server) PutObject(ctx context.Context, bucket *store.Bucket, key, conte
 		name := fmt.Sprintf("%s.part%d", key, len(manifest))
 		fileID, err := s.drive.Upload(ctx, refresh, folderID, name, contentType, counter)
 		if err != nil {
-			return "", err
+			return "", s.abandon(ctx, manifest, err)
 		}
 		manifest = append(manifest, manifestPart{
 			AccountID: acc.ID, DriveFileID: fileID, Size: counter.n,
@@ -200,11 +199,10 @@ func (s *Server) PutObject(ctx context.Context, bucket *store.Bucket, key, conte
 	if len(manifest) == 1 {
 		row.AccountID, row.DriveFileID = manifest[0].AccountID, manifest[0].DriveFileID
 	} else {
-		blob, _ := json.Marshal(manifest)
-		row.PartsJSON = string(blob)
+		row.PartsJSON = marshalManifest(manifest)
 	}
 	if err := s.store.PutObject(row); err != nil {
-		return "", err
+		return "", s.abandon(ctx, manifest, err)
 	}
 	if prior != nil {
 		s.deleteBackingFiles(ctx, prior)
@@ -216,23 +214,38 @@ func (s *Server) PutObject(ctx context.Context, bucket *store.Bucket, key, conte
 // For single-part objects it returns Drive's response (status, headers, body);
 // for multipart objects it returns a stitched reader (see multipart.go).
 func (s *Server) deleteBackingFiles(ctx context.Context, o *store.ObjectRow) {
-	if o.IsMultipart {
-		for _, p := range parsePartsManifest(o.Parts) {
-			if acc, err := s.store.DriveAccountByID(p.AccountID); err == nil {
-				if refresh, derr := s.refreshFor(acc); derr == nil {
-					_ = s.drive.Delete(ctx, refresh, p.DriveFileID)
-				}
+	s.deleteManifest(ctx, backingParts(o))
+}
+
+// deleteManifest removes a set of Drive files, best-effort: a file that
+// resists deletion is left for the garbage collector rather than aborting the
+// rest of the cleanup.
+func (s *Server) deleteManifest(ctx context.Context, parts []manifestPart) {
+	tokens := map[string]string{}
+	for _, p := range parts {
+		refresh, ok := tokens[p.AccountID]
+		if !ok {
+			acc, err := s.store.DriveAccountByID(p.AccountID)
+			if err != nil {
+				continue
 			}
-		}
-		return
-	}
-	if o.AccountID.Valid && o.DriveFileID.Valid {
-		if acc, err := s.store.DriveAccountByID(o.AccountID.String); err == nil {
-			if refresh, derr := s.refreshFor(acc); derr == nil {
-				_ = s.drive.Delete(ctx, refresh, o.DriveFileID.String)
+			if refresh, err = s.refreshFor(acc); err != nil {
+				continue
 			}
+			tokens[p.AccountID] = refresh
 		}
+		_ = s.drive.Delete(ctx, refresh, p.DriveFileID)
 	}
+}
+
+// abandon cleans up the chunks a failed upload already put on Drive and
+// returns the error that caused it, so a mid-upload failure costs no storage.
+func (s *Server) abandon(ctx context.Context, manifest []manifestPart, cause error) error {
+	// The request's context may already be cancelled; clean up regardless.
+	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+	defer cancel()
+	s.deleteManifest(cleanup, manifest)
+	return cause
 }
 
 // DeleteObject removes an object's metadata and its Drive backing file(s).

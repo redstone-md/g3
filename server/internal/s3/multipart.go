@@ -21,12 +21,33 @@ type manifestPart struct {
 }
 
 func parsePartsManifest(ns sql.NullString) []manifestPart {
-	if !ns.Valid || ns.String == "" {
+	if !ns.Valid {
+		return nil
+	}
+	return parseManifestJSON(ns.String)
+}
+
+// parseManifestJSON decodes a stored parts manifest. A blob that fails to
+// parse yields no parts, which keeps callers (including the garbage
+// collector) from acting on a half-read manifest.
+func parseManifestJSON(blob string) []manifestPart {
+	if blob == "" {
 		return nil
 	}
 	var parts []manifestPart
-	_ = json.Unmarshal([]byte(ns.String), &parts)
+	if err := json.Unmarshal([]byte(blob), &parts); err != nil {
+		return nil
+	}
 	return parts
+}
+
+// marshalManifest encodes a manifest for the object's parts column.
+func marshalManifest(parts []manifestPart) string {
+	blob, err := json.Marshal(parts)
+	if err != nil {
+		return ""
+	}
+	return string(blob)
 }
 
 // InitiateMultipart starts a multipart upload and returns its id. metadata is
@@ -54,8 +75,9 @@ func (s *Server) UploadPart(ctx context.Context, mu *store.MultipartUpload, part
 		return "", err
 	}
 	etag := hex.EncodeToString(hasher.Sum(nil))
+	staged := []manifestPart{{AccountID: acc.ID, DriveFileID: fileID}}
 	if err := s.store.PutPart(mu.UploadID, partNumber, acc.ID, fileID, counter.n, etag); err != nil {
-		return "", err
+		return "", s.abandon(ctx, staged, err)
 	}
 	s.store.AddDailyUsage(acc.ID, counter.n, todayUTC())
 	return etag, nil
@@ -87,12 +109,11 @@ func (s *Server) CompleteMultipart(ctx context.Context, bucket *store.Bucket, mu
 	}
 	etag := fmt.Sprintf("%s-%d", hex.EncodeToString(concat.Sum(nil)), len(parts))
 
-	blob, _ := json.Marshal(manifest)
 	prior, _ := s.store.ObjectByKey(bucket.ID, mu.Key)
 	if err := s.store.PutObject(store.ObjectWrite{
 		BucketID: bucket.ID, Key: mu.Key, Size: total, ETag: etag,
 		ContentType: mu.ContentType, Metadata: mu.Metadata.String,
-		PartsJSON: string(blob),
+		PartsJSON: marshalManifest(manifest),
 	}); err != nil {
 		return "", 0, err
 	}
@@ -110,21 +131,11 @@ func (s *Server) AbortMultipart(ctx context.Context, mu *store.MultipartUpload) 
 	if err != nil {
 		return err
 	}
-	tokens := map[string]string{}
+	staged := make([]manifestPart, 0, len(parts))
 	for _, p := range parts {
-		refresh, ok := tokens[p.AccountID]
-		if !ok {
-			if acc, aerr := s.store.DriveAccountByID(p.AccountID); aerr == nil {
-				if r, derr := s.refreshFor(acc); derr == nil {
-					refresh = r
-					tokens[p.AccountID] = r
-				}
-			}
-		}
-		if refresh != "" {
-			_ = s.drive.Delete(ctx, refresh, p.DriveFileID)
-		}
+		staged = append(staged, manifestPart{AccountID: p.AccountID, DriveFileID: p.DriveFileID})
 	}
+	s.deleteManifest(ctx, staged)
 	return s.store.DeleteMultipart(mu.UploadID)
 }
 
