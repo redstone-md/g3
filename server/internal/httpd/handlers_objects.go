@@ -21,16 +21,19 @@ type objectEntry struct {
 	IsMultipart bool   `json:"isMultipart"`
 }
 
-// objectListing groups objects under a prefix into folders + files (delimiter "/").
+// objectListing groups objects under a prefix into folders + files (delimiter
+// "/"). Next resumes a truncated listing.
 type objectListing struct {
 	Bucket    string        `json:"bucket"`
 	Prefix    string        `json:"prefix"`
 	Folders   []string      `json:"folders"`
 	Files     []objectEntry `json:"files"`
 	Truncated bool          `json:"truncated"`
+	Next      string        `json:"next"`
 }
 
-const objectListCap = 1000
+// objectListCap is how many entries one page of the file manager holds.
+const objectListCap = 200
 
 func (a *api) bucketFromPath(w http.ResponseWriter, r *http.Request) *store.Bucket {
 	b, err := a.store.BucketByID(r.PathValue("id"))
@@ -50,32 +53,26 @@ func (a *api) listBucketObjects(w http.ResponseWriter, r *http.Request) {
 	if b == nil {
 		return
 	}
-	prefix := r.URL.Query().Get("prefix")
+	q := r.URL.Query()
+	prefix := q.Get("prefix")
 
-	rows, err := a.store.ListObjects(b.ID, prefix, "", objectListCap+1)
+	// The S3 listing walk rolls each directory up and resumes past it, so a
+	// folder with 100k objects in it costs one row, not 100k.
+	page, err := a.engine.ListPage(b.ID, prefix, q.Get("after"), objectListCap)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not list objects")
 		return
 	}
-	out := objectListing{Bucket: b.Name, Prefix: prefix, Folders: []string{}, Files: []objectEntry{}}
-	out.Truncated = len(rows) > objectListCap
-	if out.Truncated {
-		rows = rows[:objectListCap]
+	out := objectListing{
+		Bucket: b.Name, Prefix: prefix, Folders: page.Folders, Files: []objectEntry{},
+		Truncated: page.Truncated, Next: page.Next,
 	}
-
-	seenFolder := map[string]bool{}
-	for _, o := range rows {
-		rest := strings.TrimPrefix(o.Key, prefix)
-		if i := strings.IndexByte(rest, '/'); i >= 0 {
-			folder := prefix + rest[:i+1] // e.g. "photos/"
-			if !seenFolder[folder] {
-				seenFolder[folder] = true
-				out.Folders = append(out.Folders, folder)
-			}
-			continue
-		}
+	if out.Folders == nil {
+		out.Folders = []string{}
+	}
+	for _, o := range page.Files {
 		out.Files = append(out.Files, objectEntry{
-			Key: o.Key, Name: rest, Size: o.Size, ETag: o.ETag,
+			Key: o.Key, Name: strings.TrimPrefix(o.Key, prefix), Size: o.Size, ETag: o.ETag,
 			ContentType: o.ContentType, UpdatedAt: o.UpdatedAt, IsMultipart: o.IsMultipart,
 		})
 	}

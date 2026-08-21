@@ -19,7 +19,8 @@
     "password_fair": "Fair",
     "password_good": "Good",
     "password_strong": "Strong",
-    "done": "Done"
+    "done": "Done",
+    "loading": "Loading…"
   },
   "nav": {
     "roles": "Roles",
@@ -310,7 +311,9 @@
     "removed": "Account removed.",
     "empty": "No Google accounts linked yet.",
     "linked": "Google account linked.",
-    "linkError": "Linking failed ({reason})."
+    "linkError": "Linking failed ({reason}).",
+    "storedByG3": "Stored by G3",
+    "accountTotal": "Account total"
   },
   "buckets": {
     "title": "Buckets",
@@ -386,6 +389,7 @@
     "policySaved": "Policy saved.",
     "uploads": "Uploads",
     "uploadDone": "Done",
-    "cancelUpload": "Cancel"
+    "cancelUpload": "Cancel",
+    "loadMore": "Load more"
   }
 }

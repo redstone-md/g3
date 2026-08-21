@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -18,6 +23,8 @@ export interface ObjectListing {
   folders: string[];
   files: ObjectEntry[];
   truncated: boolean;
+  /** Cursor that resumes a truncated listing. */
+  next: string;
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
@@ -30,13 +37,22 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 const key = (bucketId: string, prefix: string) =>
   ["objects", bucketId, prefix] as const;
 
+/**
+ * Lists one folder, a page at a time. The server rolls sub-folders up, so a
+ * page can be all directories; only the files inside the current folder are
+ * paged, resumed with the cursor the previous page returned.
+ */
 export function useObjects(bucketId: string, prefix: string) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: key(bucketId, prefix),
-    queryFn: () =>
-      request<ObjectListing>(
-        `/api/buckets/${bucketId}/objects?prefix=${encodeURIComponent(prefix)}`,
-      ),
+    queryFn: ({ pageParam }) => {
+      const after = pageParam ? `&after=${encodeURIComponent(pageParam)}` : "";
+      return request<ObjectListing>(
+        `/api/buckets/${bucketId}/objects?prefix=${encodeURIComponent(prefix)}${after}`,
+      );
+    },
+    initialPageParam: "",
+    getNextPageParam: (last) => (last.truncated ? last.next : undefined),
     enabled: !!bucketId,
   });
 }

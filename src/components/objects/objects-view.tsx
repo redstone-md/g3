@@ -93,7 +93,18 @@ export function ObjectsView({
   const tc = useTranslations("common");
   const router = useRouter();
   const [prefix, setPrefix] = useState("");
-  const { data, isLoading, error } = useObjects(bucketId, prefix);
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useObjects(bucketId, prefix);
+  // The listing arrives page by page; the table renders them as one folder.
+  const bucketName = data?.pages[0]?.bucket;
+  const folders = data?.pages.flatMap((p) => p.folders) ?? [];
+  const files = data?.pages.flatMap((p) => p.files) ?? [];
   const qc = useQueryClient();
   const remove = useDeleteObject(bucketId);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -184,7 +195,7 @@ export function ObjectsView({
   return (
     <>
       <PageHeader
-        title={data?.bucket ?? t("title")}
+        title={bucketName ?? t("title")}
         description={t("description")}
       >
         <Button
@@ -218,7 +229,7 @@ export function ObjectsView({
           onClick={() => goTo(0)}
           className="text-muted-foreground hover:text-foreground"
         >
-          {data?.bucket ?? t("root")}
+          {bucketName ?? t("root")}
         </button>
         {segments.map((seg, i) => (
           <span key={i} className="flex items-center gap-1">
@@ -265,7 +276,7 @@ export function ObjectsView({
               ))
             ) : (
               <>
-                {data?.folders.map((folder) => (
+                {folders.map((folder) => (
                   <TableRow
                     key={folder}
                     className="h-12 cursor-pointer"
@@ -285,7 +296,7 @@ export function ObjectsView({
                     <TableCell />
                   </TableRow>
                 ))}
-                {data?.files.map((file) => (
+                {files.map((file) => (
                   <TableRow key={file.key} className="h-12">
                     <TableCell className="font-medium">
                       <span className="flex items-center gap-2">
@@ -331,13 +342,27 @@ export function ObjectsView({
                     </TableCell>
                   </TableRow>
                 ))}
-                {!data?.folders.length && !data?.files.length ? (
+                {!folders.length && !files.length ? (
                   <TableRow className="h-12">
                     <TableCell
                       colSpan={4}
                       className="text-center text-muted-foreground"
                     >
                       {t("empty")}
+                    </TableCell>
+                  </TableRow>
+                ) : null}
+                {hasNextPage ? (
+                  <TableRow className="h-12">
+                    <TableCell colSpan={4} className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={isFetchingNextPage}
+                        onClick={() => fetchNextPage()}
+                      >
+                        {isFetchingNextPage ? tc("loading") : t("loadMore")}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ) : null}

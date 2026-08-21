@@ -137,3 +137,32 @@ func keyAfterPrefix(p string) string {
 	}
 	return p + "\xff"
 }
+
+// Page is one page of a bucket listing for the panel: the directories rolled
+// up under the prefix, the files sitting directly in it, and a cursor for the
+// rest.
+type Page struct {
+	Folders   []string
+	Files     []store.ObjectRow
+	Next      string
+	Truncated bool
+}
+
+// ListPage lists a bucket the way the S3 API does — every key inside a
+// directory rolls into that directory — so the panel sees all folders no
+// matter how many objects hide in them. Resume a truncated page by passing
+// its Next back as after.
+func (s *Server) ListPage(bucketID, prefix, after string, max int) (Page, error) {
+	page, err := buildListing(s.store.ListObjects, bucketID, listRequest{
+		Prefix: prefix, Delimiter: "/", After: after, MaxKeys: max,
+	})
+	if err != nil {
+		return Page{}, err
+	}
+	return Page{
+		Folders:   page.CommonPrefixes,
+		Files:     page.Objects,
+		Next:      page.NextMarker,
+		Truncated: page.Truncated,
+	}, nil
+}

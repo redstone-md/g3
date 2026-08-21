@@ -19,7 +19,8 @@
     "password_fair": "Средний",
     "password_good": "Хороший",
     "password_strong": "Надёжный",
-    "done": "Готово"
+    "done": "Готово",
+    "loading": "Загрузка…"
   },
   "nav": {
     "roles": "Роли",
@@ -310,7 +311,9 @@
     "removed": "Аккаунт удалён.",
     "empty": "Аккаунты Google ещё не подключены.",
     "linked": "Аккаунт Google подключён.",
-    "linkError": "Не удалось подключить ({reason})."
+    "linkError": "Не удалось подключить ({reason}).",
+    "storedByG3": "Занято G3",
+    "accountTotal": "Всего в аккаунте"
   },
   "buckets": {
     "title": "Бакеты",
@@ -386,6 +389,7 @@
     "policySaved": "Политика сохранена.",
     "uploads": "Загрузки",
     "uploadDone": "Готово",
-    "cancelUpload": "Отмена"
+    "cancelUpload": "Отмена",
+    "loadMore": "Показать ещё"
   }
 }
