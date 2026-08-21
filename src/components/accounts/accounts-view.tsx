@@ -41,7 +41,10 @@ import type { AccountDTO } from "@/lib/types";
 function formatBytes(n: number): string {
   if (!n || n < 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB", "PB"];
-  const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
+  const i = Math.min(
+    units.length - 1,
+    Math.floor(Math.log(n) / Math.log(1024)),
+  );
   return `${(n / 1024 ** i).toFixed(i ? 1 : 0)} ${units[i]}`;
 }
 
@@ -82,7 +85,9 @@ export function AccountsView({ permissions }: { permissions: string[] }) {
     <>
       <PageHeader title={t("title")} description={t("description")}>
         {can.create ? (
-          <Button onClick={() => window.location.assign("/api/accounts/connect")}>
+          <Button
+            onClick={() => window.location.assign("/api/accounts/connect")}
+          >
             <HugeiconsIcon icon={PlusSignIcon} />
             {t("add")}
           </Button>
@@ -101,7 +106,9 @@ export function AccountsView({ permissions }: { permissions: string[] }) {
             <TableRow>
               <TableHead>{t("account")}</TableHead>
               <TableHead>{t("usage")}</TableHead>
-              <TableHead className="hidden sm:table-cell">{t("weight")}</TableHead>
+              <TableHead className="hidden sm:table-cell">
+                {t("weight")}
+              </TableHead>
               <TableHead className="w-[1%]" />
             </TableRow>
           </TableHeader>
@@ -209,7 +216,9 @@ function AccountRow({
           </div>
           <span className="mt-1 block text-xs text-muted-foreground">
             {formatBytes(acc.storageUsage)} /{" "}
-            {acc.storageLimit > 0 ? formatBytes(acc.storageLimit) : t("unlimited")}
+            {acc.storageLimit > 0
+              ? formatBytes(acc.storageLimit)
+              : t("unlimited")}
             {acc.storageLimit > 0 ? ` (${pct}%)` : ""}
           </span>
         </div>

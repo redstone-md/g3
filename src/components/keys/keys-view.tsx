@@ -82,7 +82,9 @@ export function KeysView({ permissions }: { permissions: string[] }) {
         <CardContent className="flex items-center gap-2">
           <code className="rounded bg-muted px-2 py-1 text-sm">{endpoint}</code>
           <CopyButton value={endpoint} label={t("endpoint")} />
-          <span className="text-xs text-muted-foreground">{t("pathStyle")}</span>
+          <span className="text-xs text-muted-foreground">
+            {t("pathStyle")}
+          </span>
         </CardContent>
       </Card>
 
@@ -97,8 +99,12 @@ export function KeysView({ permissions }: { permissions: string[] }) {
           <TableHeader>
             <TableRow>
               <TableHead>{t("accessKeyId")}</TableHead>
-              <TableHead className="hidden sm:table-cell">{t("label")}</TableHead>
-              <TableHead className="hidden lg:table-cell">{t("lastUsed")}</TableHead>
+              <TableHead className="hidden sm:table-cell">
+                {t("label")}
+              </TableHead>
+              <TableHead className="hidden lg:table-cell">
+                {t("lastUsed")}
+              </TableHead>
               <TableHead className="w-[1%]" />
             </TableRow>
           </TableHeader>
@@ -140,7 +146,10 @@ export function KeysView({ permissions }: { permissions: string[] }) {
                 ))}
             {!isLoading && keys?.length === 0 ? (
               <TableRow className="h-14">
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={4}
+                  className="text-center text-muted-foreground"
+                >
                   {t("empty")}
                 </TableCell>
               </TableRow>
@@ -157,7 +166,10 @@ export function KeysView({ permissions }: { permissions: string[] }) {
             <DialogDescription>{t("createdWarning")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <Field label={t("accessKeyId")} value={created?.accessKeyId ?? ""} />
+            <Field
+              label={t("accessKeyId")}
+              value={created?.accessKeyId ?? ""}
+            />
             <Field
               label={t("secretAccessKey")}
               value={created?.secretAccessKey ?? ""}

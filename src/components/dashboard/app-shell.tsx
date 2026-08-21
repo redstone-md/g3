@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { AuthProvider } from "@/components/auth/auth-context";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { CommandPalette } from "@/components/dashboard/command-palette";
@@ -11,13 +12,12 @@ import { MotionSync } from "@/components/theme/motion-sync";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { ThemeSync } from "@/components/theme/theme-sync";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { AuthProvider } from "@/components/auth/auth-context";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useMeQuery } from "@/hooks/use-auth";
 import { QueryProvider } from "@/providers/query-provider";
 

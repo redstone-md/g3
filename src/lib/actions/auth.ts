@@ -9,8 +9,8 @@
  * `window.location` redirect, which also re-applies the SSR theme/locale cookies.
  */
 
-import { THEME_COOKIE } from "@/lib/auth-constants";
 import { api, apiErrorMessage } from "@/lib/api";
+import { THEME_COOKIE } from "@/lib/auth-constants";
 import { LOCALE_COOKIE } from "@/lib/locales";
 import { MOTION_COOKIE } from "@/lib/motion";
 

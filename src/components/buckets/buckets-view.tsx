@@ -51,7 +51,11 @@ import {
   useBalancing,
   useSetBalancing,
 } from "@/hooks/use-balancing";
-import { useBuckets, useCreateBucket, useDeleteBucket } from "@/hooks/use-buckets";
+import {
+  useBuckets,
+  useCreateBucket,
+  useDeleteBucket,
+} from "@/hooks/use-buckets";
 import type { BucketDTO } from "@/lib/types";
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
@@ -135,7 +139,9 @@ export function BucketsView({ permissions }: { permissions: string[] }) {
             <TableRow>
               <TableHead>{t("name")}</TableHead>
               <TableHead>{t("objects")}</TableHead>
-              <TableHead className="hidden sm:table-cell">{t("created")}</TableHead>
+              <TableHead className="hidden sm:table-cell">
+                {t("created")}
+              </TableHead>
               <TableHead className="w-[1%]" />
             </TableRow>
           </TableHeader>
@@ -152,7 +158,9 @@ export function BucketsView({ permissions }: { permissions: string[] }) {
                   <TableRow
                     key={b.id}
                     className="h-14 cursor-pointer"
-                    onClick={() => router.push(`/dashboard/objects?bucket=${b.id}`)}
+                    onClick={() =>
+                      router.push(`/dashboard/objects?bucket=${b.id}`)
+                    }
                   >
                     <TableCell className="font-mono font-medium">
                       <span className="flex items-center gap-2">
@@ -190,7 +198,10 @@ export function BucketsView({ permissions }: { permissions: string[] }) {
                 ))}
             {!isLoading && buckets?.length === 0 ? (
               <TableRow className="h-14">
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={4}
+                  className="text-center text-muted-foreground"
+                >
                   {t("empty")}
                 </TableCell>
               </TableRow>
@@ -220,7 +231,9 @@ export function BucketsView({ permissions }: { permissions: string[] }) {
               {tc("cancel")}
             </Button>
             <Button onClick={submitCreate} disabled={create.isPending}>
-              <SwapText>{create.isPending ? tc("saving") : t("create")}</SwapText>
+              <SwapText>
+                {create.isPending ? tc("saving") : t("create")}
+              </SwapText>
             </Button>
           </DialogFooter>
         </DialogContent>

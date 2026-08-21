@@ -2,8 +2,8 @@
 
 /** Persist the user's theme to the account + refresh the SSR cookie hint. */
 
-import { THEME_COOKIE } from "@/lib/auth-constants";
 import { api } from "@/lib/api";
+import { THEME_COOKIE } from "@/lib/auth-constants";
 import { resolveTheme } from "@/lib/themes";
 
 const ONE_YEAR = 60 * 60 * 24 * 365;

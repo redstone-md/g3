@@ -21,7 +21,10 @@ export async function changeEmail(input: {
     });
     return { ok: true };
   } catch (error) {
-    return { ok: false, error: apiErrorMessage(error, "Could not change email.") };
+    return {
+      ok: false,
+      error: apiErrorMessage(error, "Could not change email."),
+    };
   }
 }
 

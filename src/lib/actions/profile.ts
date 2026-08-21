@@ -16,7 +16,10 @@ export async function updateProfile(input: {
     });
     return { ok: true };
   } catch (error) {
-    return { ok: false, error: apiErrorMessage(error, "Could not save profile.") };
+    return {
+      ok: false,
+      error: apiErrorMessage(error, "Could not save profile."),
+    };
   }
 }
 

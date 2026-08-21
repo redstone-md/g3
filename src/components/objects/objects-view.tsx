@@ -6,8 +6,8 @@ import {
   CheckmarkCircle02Icon,
   Delete02Icon,
   Download01Icon,
-  Folder01Icon,
   File01Icon,
+  Folder01Icon,
   Upload01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -34,7 +34,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -43,6 +42,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
   type ObjectEntry,
   objectDownloadUrl,
@@ -153,7 +153,12 @@ export function ObjectsView({
       ]);
       handle.promise.then(
         () => {
-          patch(id, (u) => ({ ...u, status: "done", loaded: u.total, speed: 0 }));
+          patch(id, (u) => ({
+            ...u,
+            status: "done",
+            loaded: u.total,
+            speed: 0,
+          }));
           qc.invalidateQueries({ queryKey: ["objects", bucketId] });
           window.setTimeout(
             () => setUploads((prev) => prev.filter((u) => u.id !== id)),
@@ -182,7 +187,10 @@ export function ObjectsView({
         title={data?.bucket ?? t("title")}
         description={t("description")}
       >
-        <Button variant="outline" onClick={() => router.push("/dashboard/buckets")}>
+        <Button
+          variant="outline"
+          onClick={() => router.push("/dashboard/buckets")}
+        >
           <HugeiconsIcon icon={ArrowLeft01Icon} />
           {t("backToBuckets")}
         </Button>
@@ -201,9 +209,7 @@ export function ObjectsView({
         />
       </PageHeader>
 
-      {uploads.length > 0 ? (
-        <UploadsPanel uploads={uploads} />
-      ) : null}
+      {uploads.length > 0 ? <UploadsPanel uploads={uploads} /> : null}
 
       {/* Breadcrumb */}
       <div className="mb-4 flex flex-wrap items-center gap-1 text-sm">
@@ -239,8 +245,12 @@ export function ObjectsView({
           <TableHeader>
             <TableRow>
               <TableHead>{t("name")}</TableHead>
-              <TableHead className="hidden sm:table-cell">{t("size")}</TableHead>
-              <TableHead className="hidden lg:table-cell">{t("modified")}</TableHead>
+              <TableHead className="hidden sm:table-cell">
+                {t("size")}
+              </TableHead>
+              <TableHead className="hidden lg:table-cell">
+                {t("modified")}
+              </TableHead>
               <TableHead className="w-[1%]" />
             </TableRow>
           </TableHeader>
@@ -294,8 +304,16 @@ export function ObjectsView({
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
-                        <Button asChild variant="ghost" size="icon" aria-label={t("download")}>
-                          <a href={objectDownloadUrl(bucketId, file.key)} download>
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="icon"
+                          aria-label={t("download")}
+                        >
+                          <a
+                            href={objectDownloadUrl(bucketId, file.key)}
+                            download
+                          >
                             <HugeiconsIcon icon={Download01Icon} />
                           </a>
                         </Button>
@@ -315,7 +333,10 @@ export function ObjectsView({
                 ))}
                 {!data?.folders.length && !data?.files.length ? (
                   <TableRow className="h-12">
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={4}
+                      className="text-center text-muted-foreground"
+                    >
                       {t("empty")}
                     </TableCell>
                   </TableRow>
@@ -450,10 +471,7 @@ function PolicyEditor({
           disabled={!canWrite}
         />
         {canWrite ? (
-          <Button
-            onClick={() => save.mutate(value)}
-            disabled={save.isPending}
-          >
+          <Button onClick={() => save.mutate(value)} disabled={save.isPending}>
             {save.isPending ? tc("saving") : t("savePolicy")}
           </Button>
         ) : null}

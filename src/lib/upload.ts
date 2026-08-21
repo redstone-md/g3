@@ -23,7 +23,13 @@ interface SendOpts {
   onProgress?: (loaded: number) => void;
 }
 
-function send({ method, url, body, signal, onProgress }: SendOpts): Promise<string> {
+function send({
+  method,
+  url,
+  body,
+  signal,
+  onProgress,
+}: SendOpts): Promise<string> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) {
       reject(new DOMException("aborted", "AbortError"));

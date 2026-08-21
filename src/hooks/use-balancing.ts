@@ -23,7 +23,8 @@ export type BalancingStrategy =
 export function useBalancing() {
   return useQuery({
     queryKey: KEY,
-    queryFn: () => request<{ strategy: BalancingStrategy }>("/api/settings/balancing"),
+    queryFn: () =>
+      request<{ strategy: BalancingStrategy }>("/api/settings/balancing"),
   });
 }
 
