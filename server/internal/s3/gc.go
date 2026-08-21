@@ -25,9 +25,13 @@ const (
 	sampleLimit = 20
 )
 
-// GCReport summarises one pass of the collector.
+// GCReport summarises one pass of the collector. Scanned* covers everything
+// found in the pool's G3 folders, which is what an account's Drive actually
+// costs G3 — its quota usage also counts the owner's unrelated files.
 type GCReport struct {
 	Applied      bool     `json:"applied"`
+	ScannedFiles int      `json:"scannedFiles"`
+	ScannedBytes int64    `json:"scannedBytes"`
 	StaleUploads int      `json:"staleUploads"`
 	OrphanFiles  int      `json:"orphanFiles"`
 	OrphanBytes  int64    `json:"orphanBytes"`
@@ -153,6 +157,8 @@ func (s *Server) sweepAccount(ctx context.Context, acc store.DriveAccount, keep 
 	}
 	err = s.drive.ListFolder(ctx, refresh, acc.FolderID.String, func(page []drive.FileInfo) error {
 		for _, f := range page {
+			report.ScannedFiles++
+			report.ScannedBytes += f.Size
 			if _, ok := keep[f.ID]; ok {
 				continue
 			}
