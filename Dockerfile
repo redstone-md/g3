@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # 1) Build the static frontend (Next.js output: export -> out/).
-FROM node:22-alpine AS web
+FROM node:24-alpine AS web
 WORKDIR /web
 COPY package.json package-lock.json ./
 RUN npm ci
