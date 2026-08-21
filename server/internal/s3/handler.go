@@ -287,7 +287,7 @@ func (s *Server) putObject(w http.ResponseWriter, r *http.Request, b *store.Buck
 	if ct == "" {
 		ct = "application/octet-stream"
 	}
-	etag, err := s.PutObject(r.Context(), b, key, ct, objectBody(r))
+	etag, err := s.PutObject(r.Context(), b, key, ct, userMetadataJSON(r.Header), objectBody(r))
 	if err != nil {
 		writeS3Error(w, http.StatusInternalServerError, "InternalError", err.Error(), key)
 		return
@@ -311,6 +311,7 @@ func (s *Server) getObject(w http.ResponseWriter, r *http.Request, b *store.Buck
 	t, _ := time.Parse(time.RFC3339, o.UpdatedAt)
 	w.Header().Set("Last-Modified", t.UTC().Format(http.TimeFormat))
 	w.Header().Set("Accept-Ranges", "bytes")
+	writeUserMetadata(w, o.Metadata)
 
 	if !withBody { // HEAD
 		w.Header().Set("Content-Length", strconv.FormatInt(o.Size, 10))
@@ -389,7 +390,7 @@ func (s *Server) initiateMultipart(w http.ResponseWriter, r *http.Request, b *st
 	if ct == "" {
 		ct = "application/octet-stream"
 	}
-	uploadID, err := s.InitiateMultipart(b, key, ct)
+	uploadID, err := s.InitiateMultipart(b, key, ct, userMetadataJSON(r.Header))
 	if err != nil {
 		writeS3Error(w, http.StatusInternalServerError, "InternalError", err.Error(), key)
 		return

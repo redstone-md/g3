@@ -29,9 +29,10 @@ func parsePartsManifest(ns sql.NullString) []manifestPart {
 	return parts
 }
 
-// InitiateMultipart starts a multipart upload and returns its id.
-func (s *Server) InitiateMultipart(bucket *store.Bucket, key, contentType string) (string, error) {
-	return s.store.CreateMultipart(bucket.ID, key, contentType)
+// InitiateMultipart starts a multipart upload and returns its id. metadata is
+// the JSON blob of x-amz-meta-* headers, applied to the object on completion.
+func (s *Server) InitiateMultipart(bucket *store.Bucket, key, contentType, metadata string) (string, error) {
+	return s.store.CreateMultipart(bucket.ID, key, contentType, metadata)
 }
 
 // UploadPart streams one part to a balancer-chosen account and records it.
@@ -88,7 +89,11 @@ func (s *Server) CompleteMultipart(ctx context.Context, bucket *store.Bucket, mu
 
 	blob, _ := json.Marshal(manifest)
 	prior, _ := s.store.ObjectByKey(bucket.ID, mu.Key)
-	if err := s.store.PutMultipartObject(bucket.ID, mu.Key, total, etag, mu.ContentType, string(blob)); err != nil {
+	if err := s.store.PutObject(store.ObjectWrite{
+		BucketID: bucket.ID, Key: mu.Key, Size: total, ETag: etag,
+		ContentType: mu.ContentType, Metadata: mu.Metadata.String,
+		PartsJSON: string(blob),
+	}); err != nil {
 		return "", 0, err
 	}
 	if prior != nil {

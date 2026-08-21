@@ -142,8 +142,9 @@ const chunkSize int64 = 64 << 20 // 64 MiB
 // PutObject streams body to Drive, chunking large objects across accounts. The
 // ETag is always the MD5 of the whole object (computed inline), so single-call
 // PUTs validate correctly regardless of internal chunking. Any prior version's
-// Drive file(s) are deleted afterward.
-func (s *Server) PutObject(ctx context.Context, bucket *store.Bucket, key, contentType string, body io.Reader) (string, error) {
+// Drive file(s) are deleted afterward. metadata is the JSON blob of the
+// request's x-amz-meta-* headers, stored verbatim and replayed on reads.
+func (s *Server) PutObject(ctx context.Context, bucket *store.Bucket, key, contentType, metadata string, body io.Reader) (string, error) {
 	full := md5.New()
 	br := bufio.NewReaderSize(body, 1<<20)
 
@@ -192,15 +193,17 @@ func (s *Server) PutObject(ctx context.Context, bucket *store.Bucket, key, conte
 	etag := hex.EncodeToString(full.Sum(nil))
 	prior, _ := s.store.ObjectByKey(bucket.ID, key)
 
-	var err error
+	row := store.ObjectWrite{
+		BucketID: bucket.ID, Key: key, Size: total, ETag: etag,
+		ContentType: contentType, Metadata: metadata,
+	}
 	if len(manifest) == 1 {
-		p := manifest[0]
-		err = s.store.PutSingleObject(bucket.ID, key, total, etag, contentType, p.AccountID, p.DriveFileID)
+		row.AccountID, row.DriveFileID = manifest[0].AccountID, manifest[0].DriveFileID
 	} else {
 		blob, _ := json.Marshal(manifest)
-		err = s.store.PutMultipartObject(bucket.ID, key, total, etag, contentType, string(blob))
+		row.PartsJSON = string(blob)
 	}
-	if err != nil {
+	if err := s.store.PutObject(row); err != nil {
 		return "", err
 	}
 	if prior != nil {

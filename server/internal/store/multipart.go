@@ -14,6 +14,7 @@ type MultipartUpload struct {
 	BucketID    string
 	Key         string
 	ContentType string
+	Metadata    sql.NullString // user metadata from CreateMultipartUpload
 }
 
 // MultipartPart is one uploaded part.
@@ -25,21 +26,25 @@ type MultipartPart struct {
 	ETag        string
 }
 
-func (s *Store) CreateMultipart(bucketID, key, contentType string) (string, error) {
+// CreateMultipart starts an upload. Metadata is carried from the initiate
+// request so CompleteMultipart can store it on the finished object.
+func (s *Store) CreateMultipart(bucketID, key, contentType, metadata string) (string, error) {
 	uploadID := auth.NewID() + auth.NewID()
 	_, err := s.DB.Exec(
-		`INSERT INTO multipart_uploads (upload_id, bucket_id, object_key, content_type, created_at)
-		 VALUES (?, ?, ?, ?, ?)`,
-		uploadID, bucketID, key, contentType, time.Now().UTC().Format(time.RFC3339))
+		`INSERT INTO multipart_uploads (upload_id, bucket_id, object_key, content_type, metadata, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?)`,
+		uploadID, bucketID, key, contentType, nullable(metadata),
+		time.Now().UTC().Format(time.RFC3339))
 	return uploadID, err
 }
 
 func (s *Store) MultipartByID(uploadID string) (*MultipartUpload, error) {
 	var m MultipartUpload
 	err := s.DB.QueryRow(
-		`SELECT upload_id, bucket_id, object_key, content_type FROM multipart_uploads WHERE upload_id = ?`,
+		`SELECT upload_id, bucket_id, object_key, content_type, metadata
+		 FROM multipart_uploads WHERE upload_id = ?`,
 		uploadID,
-	).Scan(&m.UploadID, &m.BucketID, &m.Key, &m.ContentType)
+	).Scan(&m.UploadID, &m.BucketID, &m.Key, &m.ContentType, &m.Metadata)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}

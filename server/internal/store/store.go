@@ -112,6 +112,7 @@ CREATE TABLE IF NOT EXISTS objects (
   size INTEGER NOT NULL DEFAULT 0,
   etag TEXT NOT NULL,
   content_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+  metadata TEXT,
   account_id TEXT,
   drive_file_id TEXT,
   parts TEXT,
@@ -128,6 +129,7 @@ CREATE TABLE IF NOT EXISTS multipart_uploads (
   bucket_id TEXT NOT NULL,
   object_key TEXT NOT NULL,
   content_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+  metadata TEXT,
   created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS multipart_parts (
@@ -178,6 +180,8 @@ func Open(dataDir, adminEmail, adminPassword string) (*Store, error) {
 	for _, alter := range []string{
 		`ALTER TABLE drive_accounts ADD COLUMN daily_date TEXT`,
 		`ALTER TABLE drive_accounts ADD COLUMN daily_bytes INTEGER NOT NULL DEFAULT 0`,
+		`ALTER TABLE objects ADD COLUMN metadata TEXT`,
+		`ALTER TABLE multipart_uploads ADD COLUMN metadata TEXT`,
 	} {
 		_, _ = db.Exec(alter) // ignore "duplicate column" on already-migrated DBs
 	}

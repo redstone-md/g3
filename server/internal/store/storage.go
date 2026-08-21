@@ -27,9 +27,25 @@ type ObjectRow struct {
 	AccountID   sql.NullString
 	DriveFileID sql.NullString
 	Parts       sql.NullString
+	Metadata    sql.NullString // JSON map of user metadata (x-amz-meta-*)
 	IsMultipart bool
 	CreatedAt   string
 	UpdatedAt   string
+}
+
+// ObjectWrite describes an object version to persist. Exactly one backing
+// form is filled in: AccountID+DriveFileID for a single Drive file, or
+// PartsJSON for a manifest of parts.
+type ObjectWrite struct {
+	BucketID    string
+	Key         string
+	Size        int64
+	ETag        string
+	ContentType string
+	Metadata    string // JSON map of user metadata; "" stores NULL
+	AccountID   string
+	DriveFileID string
+	PartsJSON   string
 }
 
 // --- buckets ---
@@ -95,10 +111,10 @@ func (s *Store) ObjectByKey(bucketID, key string) (*ObjectRow, error) {
 	var o ObjectRow
 	err := s.DB.QueryRow(
 		`SELECT id, bucket_id, object_key, size, etag, content_type, account_id,
-		        drive_file_id, parts, is_multipart, created_at, updated_at
+		        drive_file_id, parts, metadata, is_multipart, created_at, updated_at
 		 FROM objects WHERE bucket_id = ? AND object_key = ?`, bucketID, key,
 	).Scan(&o.ID, &o.BucketID, &o.Key, &o.Size, &o.ETag, &o.ContentType, &o.AccountID,
-		&o.DriveFileID, &o.Parts, &o.IsMultipart, &o.CreatedAt, &o.UpdatedAt)
+		&o.DriveFileID, &o.Parts, &o.Metadata, &o.IsMultipart, &o.CreatedAt, &o.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -108,34 +124,35 @@ func (s *Store) ObjectByKey(bucketID, key string) (*ObjectRow, error) {
 	return &o, nil
 }
 
-// PutSingleObject upserts a single-part object (replacing any existing key).
-func (s *Store) PutSingleObject(bucketID, key string, size int64, etag, contentType, accountID, driveFileID string) error {
+// PutObject upserts an object version, replacing any existing key. A manifest
+// in PartsJSON marks the object multipart; otherwise the single-file columns
+// are used. The two forms are mutually exclusive, so the unused columns are
+// cleared on update rather than left pointing at the previous version.
+func (s *Store) PutObject(o ObjectWrite) error {
 	now := time.Now().UTC().Format(time.RFC3339)
+	multipart := o.PartsJSON != ""
 	_, err := s.DB.Exec(
 		`INSERT INTO objects (id, bucket_id, object_key, size, etag, content_type,
-		   account_id, drive_file_id, parts, is_multipart, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 0, ?, ?)
+		   metadata, account_id, drive_file_id, parts, is_multipart, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		 ON CONFLICT(bucket_id, object_key) DO UPDATE SET
 		   size=excluded.size, etag=excluded.etag, content_type=excluded.content_type,
-		   account_id=excluded.account_id, drive_file_id=excluded.drive_file_id,
-		   parts=NULL, is_multipart=0, updated_at=excluded.updated_at`,
-		auth.NewID(), bucketID, key, size, etag, contentType, accountID, driveFileID, now, now)
+		   metadata=excluded.metadata, account_id=excluded.account_id,
+		   drive_file_id=excluded.drive_file_id, parts=excluded.parts,
+		   is_multipart=excluded.is_multipart, updated_at=excluded.updated_at`,
+		auth.NewID(), o.BucketID, o.Key, o.Size, o.ETag, o.ContentType,
+		nullable(o.Metadata), nullable(o.AccountID), nullable(o.DriveFileID),
+		nullable(o.PartsJSON), multipart, now, now)
 	return err
 }
 
-// PutMultipartObject upserts a multipart object with a JSON parts manifest.
-func (s *Store) PutMultipartObject(bucketID, key string, size int64, etag, contentType, partsJSON string) error {
-	now := time.Now().UTC().Format(time.RFC3339)
-	_, err := s.DB.Exec(
-		`INSERT INTO objects (id, bucket_id, object_key, size, etag, content_type,
-		   account_id, drive_file_id, parts, is_multipart, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, ?, 1, ?, ?)
-		 ON CONFLICT(bucket_id, object_key) DO UPDATE SET
-		   size=excluded.size, etag=excluded.etag, content_type=excluded.content_type,
-		   account_id=NULL, drive_file_id=NULL, parts=excluded.parts, is_multipart=1,
-		   updated_at=excluded.updated_at`,
-		auth.NewID(), bucketID, key, size, etag, contentType, partsJSON, now, now)
-	return err
+// nullable stores empty strings as SQL NULL, keeping "absent" distinct from
+// "empty" for the optional object columns.
+func nullable(v string) any {
+	if v == "" {
+		return nil
+	}
+	return v
 }
 
 func (s *Store) DeleteObject(bucketID, key string) error {
@@ -148,7 +165,7 @@ func (s *Store) DeleteObject(bucketID, key string) error {
 func (s *Store) ListObjects(bucketID, prefix, after string, limit int) ([]ObjectRow, error) {
 	rows, err := s.DB.Query(
 		`SELECT id, bucket_id, object_key, size, etag, content_type, account_id,
-		        drive_file_id, parts, is_multipart, created_at, updated_at
+		        drive_file_id, parts, metadata, is_multipart, created_at, updated_at
 		 FROM objects
 		 WHERE bucket_id = ? AND object_key LIKE ? || '%' AND object_key > ?
 		 ORDER BY object_key ASC LIMIT ?`,
@@ -161,7 +178,8 @@ func (s *Store) ListObjects(bucketID, prefix, after string, limit int) ([]Object
 	for rows.Next() {
 		var o ObjectRow
 		if err := rows.Scan(&o.ID, &o.BucketID, &o.Key, &o.Size, &o.ETag, &o.ContentType,
-			&o.AccountID, &o.DriveFileID, &o.Parts, &o.IsMultipart, &o.CreatedAt, &o.UpdatedAt); err != nil {
+			&o.AccountID, &o.DriveFileID, &o.Parts, &o.Metadata, &o.IsMultipart,
+			&o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, o)

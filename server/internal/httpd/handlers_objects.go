@@ -119,7 +119,8 @@ func (a *api) uploadObject(w http.ResponseWriter, r *http.Request) {
 	if ct == "" || strings.HasPrefix(ct, "multipart/form-data") {
 		ct = "application/octet-stream"
 	}
-	etag, err := a.engine.PutObject(r.Context(), b, key, ct, r.Body)
+	// Browser uploads carry no S3 user metadata.
+	etag, err := a.engine.PutObject(r.Context(), b, key, ct, "", r.Body)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, err.Error())
 		return
@@ -171,7 +172,7 @@ func (a *api) initiateUpload(w http.ResponseWriter, r *http.Request) {
 	if ct == "" {
 		ct = "application/octet-stream"
 	}
-	uploadID, err := a.engine.InitiateMultipart(b, key, ct)
+	uploadID, err := a.engine.InitiateMultipart(b, key, ct, "")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not start upload")
 		return
