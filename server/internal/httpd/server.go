@@ -84,6 +84,7 @@ func New(cfg config.Config, st *store.Store, cipher *crypto.Cipher, driveMgr *dr
 	mux.HandleFunc("GET /api/settings/balancing", a.getBalancing)
 	mux.HandleFunc("PUT /api/settings/balancing", a.setBalancing)
 	mux.HandleFunc("GET /api/stats", a.getStats)
+	mux.HandleFunc("POST /api/storage/gc", a.collectGarbage)
 
 	// Account (self-service).
 	mux.HandleFunc("GET /api/account/sessions", a.listSessions)
@@ -104,16 +105,31 @@ func New(cfg config.Config, st *store.Store, cipher *crypto.Cipher, driveMgr *dr
 
 	return &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           logRequests(mux),
+		Handler:           LogRequests(mux),
 		ReadHeaderTimeout: 10 * time.Second,
 	}, nil
 }
 
-// logRequests is a minimal access log.
-func logRequests(next http.Handler) http.Handler {
+// LogRequests is a minimal access log, shared by the panel and the S3 API —
+// without it an S3 client's failures (a proxy's 413, a rejected signature) are
+// invisible on the server.
+func LogRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		next.ServeHTTP(w, r)
-		log.Printf("%s %s %s", r.Method, r.URL.Path, time.Since(start).Round(time.Millisecond))
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(rec, r)
+		log.Printf("%s %s %d %s", r.Method, r.URL.Path, rec.status,
+			time.Since(start).Round(time.Millisecond))
 	})
+}
+
+// statusRecorder remembers the status code the handler wrote.
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (s *statusRecorder) WriteHeader(code int) {
+	s.status = code
+	s.ResponseWriter.WriteHeader(code)
 }

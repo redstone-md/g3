@@ -54,9 +54,24 @@ func main() {
 	// S3-compatible API on its own listener (separate from the panel/SPA).
 	s3srv := &http.Server{
 		Addr:              cfg.S3Addr,
-		Handler:           engine,
+		Handler:           httpd.LogRequests(engine),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
+
+	// Clients that die mid-upload never abort their multipart uploads, so the
+	// staged parts would sit on Drive forever. Sweeping them is safe enough to
+	// run unattended; deleting unreferenced files is not, and stays manual.
+	sweeper := time.NewTicker(time.Hour)
+	defer sweeper.Stop()
+	go func() {
+		for range sweeper.C {
+			if n, err := engine.SweepStaleUploads(context.Background(), 24*time.Hour); err != nil {
+				log.Printf("[g3] sweep stale uploads: %v", err)
+			} else if n > 0 {
+				log.Printf("[g3] swept %d abandoned multipart upload(s)", n)
+			}
+		}
+	}()
 
 	go func() {
 		log.Printf("[g3] panel listening on %s", cfg.Addr)

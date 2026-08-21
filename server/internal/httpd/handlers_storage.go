@@ -233,3 +233,23 @@ func randomSecret(n int) string {
 	_, _ = rand.Read(b)
 	return base64.RawURLEncoding.EncodeToString(b)[:n]
 }
+
+// collectGarbage reclaims Drive space that no object references any more.
+// It reports what it found and only deletes when the caller passes
+// ?apply=true, so the destructive half is never a side effect of looking.
+func (a *api) collectGarbage(w http.ResponseWriter, r *http.Request) {
+	actor := a.authorize(w, r, "storage.write")
+	if actor == nil {
+		return
+	}
+	apply := r.URL.Query().Get("apply") == "true"
+	report, err := a.engine.CollectGarbage(r.Context(), apply)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if apply {
+		a.store.LogAuditFull("storage.gc", actor.ID, actor.Email, "storage", "", clientIP(r))
+	}
+	writeJSON(w, http.StatusOK, report)
+}
